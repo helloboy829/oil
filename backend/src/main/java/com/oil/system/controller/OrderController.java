@@ -1,0 +1,52 @@
+package com.oil.system.controller;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.oil.system.dto.OrderDTO;
+import com.oil.system.dto.Result;
+import com.oil.system.entity.Orders;
+import com.oil.system.service.OrderService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/order")
+@RequiredArgsConstructor
+@CrossOrigin
+public class OrderController {
+
+    private final OrderService orderService;
+
+    /**
+     * 分页查询订单
+     */
+    @GetMapping("/page")
+    public Result<Page<Orders>> page(@RequestParam(defaultValue = "1") Integer current,
+                                      @RequestParam(defaultValue = "10") Integer size,
+                                      @RequestParam(required = false) String orderNo) {
+        LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
+        if (orderNo != null && !orderNo.isEmpty()) {
+            wrapper.like(Orders::getOrderNo, orderNo);
+        }
+        wrapper.orderByDesc(Orders::getCreateTime);
+        Page<Orders> page = orderService.page(new Page<>(current, size), wrapper);
+        return Result.success(page);
+    }
+
+    /**
+     * 创建订单
+     */
+    @PostMapping
+    public Result<Orders> create(@RequestBody OrderDTO orderDTO) {
+        Orders order = orderService.createOrder(orderDTO);
+        return Result.success(order);
+    }
+
+    /**
+     * 查询订单详情
+     */
+    @GetMapping("/{id}")
+    public Result<Orders> getById(@PathVariable Long id) {
+        return Result.success(orderService.getById(id));
+    }
+}

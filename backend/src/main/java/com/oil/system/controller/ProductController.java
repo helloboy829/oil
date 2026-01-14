@@ -70,4 +70,25 @@ public class ProductController {
         productService.removeById(id);
         return Result.success();
     }
+
+    /**
+     * 生成商品二维码
+     */
+    @PostMapping("/qrcode/{id}")
+    public Result<String> generateQrCode(@PathVariable Long id) {
+        String qrCodePath = productService.generateQrCode(id);
+        return Result.success(qrCodePath);
+    }
+
+    /**
+     * 获取商品二维码
+     */
+    @GetMapping("/qrcode/{id}")
+    public Result<String> getQrCode(@PathVariable Long id) {
+        Product product = productService.getById(id);
+        if (product == null) {
+            return Result.error("商品不存在");
+        }
+        return Result.success(product.getQrcodePath());  // 注意：实体类字段是qrcodePath
+    }
 }

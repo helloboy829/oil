@@ -26,9 +26,11 @@
         <el-table-column prop="unit" label="单位" width="80" />
         <el-table-column prop="price" label="单价" width="100" />
         <el-table-column prop="stock" label="库存" width="100" />
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column label="操作" width="320" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
+            <el-button type="success" size="small" @click="handleGenerateQrCode(row)">生成二维码</el-button>
+            <el-button type="info" size="small" @click="handleViewQrCode(row)">查看二维码</el-button>
             <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -71,6 +73,28 @@
         <el-button type="primary" @click="handleSubmit">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 二维码对话框 -->
+    <el-dialog v-model="qrCodeVisible" title="商品二维码" width="400px" center>
+      <div class="qrcode-container">
+        <div v-if="qrCodeLoading" class="loading">加载中...</div>
+        <div v-else-if="qrCodeUrl" class="qrcode-content">
+          <img :src="qrCodeUrl" alt="二维码" class="qrcode-image" />
+          <div class="qrcode-info">
+            <p><strong>{{ currentProduct?.name }}</strong></p>
+            <p>编码: {{ currentProduct?.code }}</p>
+          </div>
+        </div>
+        <div v-else class="no-qrcode">
+          <p>该商品还没有生成二维码</p>
+          <el-button type="primary" @click="handleGenerateQrCodeDirect">立即生成</el-button>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="qrCodeVisible = false">关闭</el-button>
+        <el-button v-if="qrCodeUrl" type="primary" @click="handleDownloadQrCode">下载二维码</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -78,6 +102,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { productApi } from '@/api/index'
+import axios from 'axios'
 
 const searchForm = reactive({ name: '' })
 const tableData = ref([])
@@ -93,6 +118,12 @@ const form = reactive({
   price: 0,
   stock: 0
 })
+
+// 二维码相关
+const qrCodeVisible = ref(false)
+const qrCodeUrl = ref('')
+const qrCodeLoading = ref(false)
+const currentProduct = ref(null)
 
 const loadData = async () => {
   const res = await productApi.getPage({
@@ -144,6 +175,68 @@ const handleDelete = (row) => {
   })
 }
 
+// 生成二维码
+const handleGenerateQrCode = async (row) => {
+  try {
+    const res = await axios.post(`http://localhost:8080/api/product/qrcode/${row.id}`)
+    if (res.data.code === 200) {
+      ElMessage.success('二维码生成成功！')
+      loadData()
+    }
+  } catch (error) {
+    ElMessage.error('二维码生成失败')
+  }
+}
+
+// 查看二维码
+const handleViewQrCode = async (row) => {
+  currentProduct.value = row
+  qrCodeVisible.value = true
+  qrCodeLoading.value = true
+  qrCodeUrl.value = ''
+
+  try {
+    const res = await axios.get(`http://localhost:8080/api/product/qrcode/${row.id}`)
+    if (res.data.code === 200 && res.data.data) {
+      // 二维码路径格式: qrcodes/产品编码.png
+      qrCodeUrl.value = `http://localhost:8080/${res.data.data}`
+    }
+  } catch (error) {
+    console.error('获取二维码失败', error)
+  } finally {
+    qrCodeLoading.value = false
+  }
+}
+
+// 直接生成二维码（在对话框中）
+const handleGenerateQrCodeDirect = async () => {
+  if (!currentProduct.value) return
+
+  qrCodeLoading.value = true
+  try {
+    const res = await axios.post(`http://localhost:8080/api/product/qrcode/${currentProduct.value.id}`)
+    if (res.data.code === 200 && res.data.data) {
+      qrCodeUrl.value = `http://localhost:8080/${res.data.data}`
+      ElMessage.success('二维码生成成功！')
+      loadData()
+    }
+  } catch (error) {
+    ElMessage.error('二维码生成失败')
+  } finally {
+    qrCodeLoading.value = false
+  }
+}
+
+// 下载二维码
+const handleDownloadQrCode = () => {
+  if (!qrCodeUrl.value || !currentProduct.value) return
+
+  const link = document.createElement('a')
+  link.href = qrCodeUrl.value
+  link.download = `${currentProduct.value.name}-${currentProduct.value.code}.png`
+  link.click()
+}
+
 onMounted(() => {
   loadData()
 })
@@ -158,5 +251,49 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.qrcode-container {
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qrcode-content {
+  text-align: center;
+}
+
+.qrcode-image {
+  width: 250px;
+  height: 250px;
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.qrcode-info {
+  margin-top: 10px;
+}
+
+.qrcode-info p {
+  margin: 5px 0;
+  font-size: 16px;
+  color: #666;
+}
+
+.no-qrcode {
+  text-align: center;
+}
+
+.no-qrcode p {
+  font-size: 16px;
+  color: #999;
+  margin-bottom: 20px;
+}
+
+.loading {
+  font-size: 16px;
+  color: #409eff;
 }
 </style>

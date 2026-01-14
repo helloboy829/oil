@@ -29,6 +29,20 @@
         停止扫码
       </el-button>
 
+      <!-- 上传二维码图片（电脑端使用） -->
+      <div class="upload-section">
+        <el-upload
+          :auto-upload="false"
+          :show-file-list="false"
+          accept="image/*"
+          :on-change="handleFileUpload"
+        >
+          <el-button type="success" size="large" class="upload-btn">
+            📷 上传二维码图片（电脑端）
+          </el-button>
+        </el-upload>
+      </div>
+
       <!-- 手动搜索（备用） -->
       <div class="manual-search">
         <el-input
@@ -285,6 +299,30 @@ const onScanSuccess = async (decodedText) => {
   }
 }
 
+// 处理文件上传（扫描上传的二维码图片）
+const handleFileUpload = async (file) => {
+  const imageFile = file.raw
+  if (!imageFile) return
+
+  try {
+    // 使用html5-qrcode扫描上传的图片
+    const html5QrCodeScanner = new Html5Qrcode("reader")
+    const decodedText = await html5QrCodeScanner.scanFile(imageFile, false)
+
+    // 扫描成功，查询商品
+    const res = await productApi.getByCode(decodedText)
+    if (res.data) {
+      addProduct(res.data)
+      ElMessage.success(`已添加：${res.data.name}`)
+    } else {
+      ElMessage.warning('未找到该商品')
+    }
+  } catch (err) {
+    ElMessage.error('无法识别二维码，请确保图片清晰')
+    console.error(err)
+  }
+}
+
 // 搜索商品
 const searchProduct = async () => {
   if (!searchKeyword.value.trim()) {
@@ -478,6 +516,19 @@ onUnmounted(() => {
 }
 
 .scan-btn {
+  width: 100%;
+  height: 60px;
+  font-size: 20px;
+  font-weight: bold;
+  border-radius: 8px;
+}
+
+/* 上传区域 */
+.upload-section {
+  margin-top: 20px;
+}
+
+.upload-btn {
   width: 100%;
   height: 60px;
   font-size: 20px;

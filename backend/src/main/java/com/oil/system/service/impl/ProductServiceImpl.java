@@ -15,12 +15,14 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
     private String qrcodeSavePath;
 
     @Override
-    public void generateQrCode(Long productId) {
+    public String generateQrCode(Long productId) {
         Product product = getById(productId);
         if (product != null) {
-            String qrcodePath = QrCodeUtil.generateQrCode(product.getCode(), qrcodeSavePath);
-            product.setQrcodePath(qrcodePath);
+            String qrCodePath = QrCodeUtil.generateQrCode(product.getCode(), qrcodeSavePath);
+            product.setQrcodePath(qrCodePath);  // 注意：实体类中字段是qrcodePath，不是qrCodePath
             updateById(product);
+            return qrCodePath;
         }
+        return null;
     }
 }

@@ -22,7 +22,7 @@ public class QrCodeUtil {
      * 生成二维码
      * @param content 二维码内容
      * @param savePath 保存路径
-     * @return 二维码文件路径
+     * @return 二维码相对路径（供Web访问）
      */
     public static String generateQrCode(String content, String savePath) {
         try {
@@ -37,7 +37,8 @@ public class QrCodeUtil {
             Path path = FileSystems.getDefault().getPath(savePath, fileName);
             MatrixToImageWriter.writeToPath(bitMatrix, "PNG", path);
 
-            return path.toString();
+            // 返回相对路径供前端访问
+            return "qrcodes/" + fileName;
         } catch (WriterException | IOException e) {
             throw new RuntimeException("生成二维码失败", e);
         }

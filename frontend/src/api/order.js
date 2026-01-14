@@ -1,3 +1,5 @@
+import request from '@/utils/request'
+
 // 订单相关接口
 export const orderApi = {
   // 分页查询订单

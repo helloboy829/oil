@@ -9,6 +9,10 @@
         text-color="#bfcbd9"
         active-text-color="#409EFF"
       >
+        <el-menu-item index="/scan">
+          <el-icon><Camera /></el-icon>
+          <span>扫码开单</span>
+        </el-menu-item>
         <el-menu-item index="/product">
           <el-icon><Goods /></el-icon>
           <span>商品管理</span>

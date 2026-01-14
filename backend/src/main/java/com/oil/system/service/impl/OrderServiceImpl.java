@@ -40,36 +40,13 @@ public class OrderServiceImpl extends ServiceImpl<OrdersMapper, Orders> implemen
             totalAmount = totalAmount.add(subtotal);
         }
 
-        // 如果是月结客户，检查信用额度
-        if (orderDTO.getCustomerId() != null && "月结".equals(orderDTO.getPaymentType())) {
-            Customer customer = customerService.getById(orderDTO.getCustomerId());
-            if (customer == null) {
-                throw new RuntimeException("客户不存在");
-            }
-            if (customer.getIsMonthly() != 1) {
-                throw new RuntimeException("该客户不是月结客户");
-            }
-
-            // 检查信用额度
-            BigDecimal creditLimit = customer.getCreditLimit() != null ? customer.getCreditLimit() : BigDecimal.ZERO;
-            BigDecimal currentBalance = customer.getBalance() != null ? customer.getBalance() : BigDecimal.ZERO;
-            BigDecimal availableCredit = creditLimit.subtract(currentBalance);
-
-            if (totalAmount.compareTo(availableCredit) > 0) {
-                throw new RuntimeException("客户可用额度不足。订单金额: ¥" + totalAmount + "，可用额度: ¥" + availableCredit);
-            }
-
-            // 更新客户欠款余额
-            customer.setBalance(currentBalance.add(totalAmount));
-            customerService.updateById(customer);
-        }
-
         // 创建订单
         Orders order = new Orders();
         order.setOrderNo(generateOrderNo());
         order.setCustomerId(orderDTO.getCustomerId());
         order.setCustomerName(orderDTO.getCustomerName());
         order.setPaymentType(orderDTO.getPaymentType());
+        // 月结订单标记为未结算,其他标记为已结算
         order.setPaymentStatus("月结".equals(orderDTO.getPaymentType()) ? "未结算" : "已结算");
         order.setRemark(orderDTO.getRemark());
         order.setOrderStatus("已完成");

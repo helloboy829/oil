@@ -478,35 +478,39 @@ onUnmounted(() => {
 <style scoped>
 /* 全局容器 */
 .scan-container {
-  min-height: 100vh;
-  padding: 20px 15px 120px;
-  background: #f5f5f5;
+  min-height: calc(100vh - 64px);
+  padding: 0 0 120px 0;
 }
 
-/* 头部 */
+/* 头部 - 现代简洁设计 */
 .header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, #818cf8 100%);
   color: white;
-  padding: 25px 20px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  padding: 32px 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-md);
 }
 
 .header h1 {
   margin: 0;
-  font-size: 32px;
-  font-weight: bold;
+  font-size: 28px;
+  font-weight: 700;
   text-align: center;
+  letter-spacing: -0.5px;
 }
 
 /* 扫码区域 */
 .scan-section {
-  background: white;
-  padding: 25px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--bg-card);
+  padding: 24px;
+  border-radius: var(--radius-lg);
+  margin: 0 24px 24px;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-base);
+}
+
+.scan-section:hover {
+  box-shadow: var(--shadow-md);
 }
 
 #reader {

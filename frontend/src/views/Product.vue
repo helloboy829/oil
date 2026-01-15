@@ -1,98 +1,137 @@
 <template>
   <div class="product-container">
-    <el-card>
+    <!-- 搜索卡片 -->
+    <el-card class="search-card" shadow="never">
+      <el-form :inline="true" :model="searchForm" class="search-form">
+        <el-form-item label="商品名称">
+          <el-input
+            v-model="searchForm.name"
+            placeholder="请输入商品名称"
+            clearable
+            prefix-icon="Search"
+          />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="loadData" icon="Search">查询</el-button>
+          <el-button @click="handleReset" icon="Refresh">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
+    <!-- 数据卡片 -->
+    <el-card class="table-card" shadow="never">
       <template #header>
         <div class="card-header">
-          <span>商品管理</span>
-          <el-button type="primary" @click="handleAdd">新增商品</el-button>
+          <div class="header-title">
+            <el-icon class="title-icon"><Goods /></el-icon>
+            <span>商品列表</span>
+          </div>
+          <el-button type="primary" @click="handleAdd" icon="Plus">新增商品</el-button>
         </div>
       </template>
 
-      <el-form :inline="true" :model="searchForm">
-        <el-form-item label="商品名称">
-          <el-input v-model="searchForm.name" placeholder="请输入商品名称" clearable />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="loadData">查询</el-button>
-          <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-
-      <el-table :data="tableData" border stripe>
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="name" label="商品名称" />
-        <el-table-column prop="code" label="商品编码" />
-        <el-table-column prop="spec" label="规格型号" />
-        <el-table-column prop="unit" label="单位" width="80" />
-        <el-table-column prop="price" label="单价" width="100" />
-        <el-table-column prop="stock" label="库存" width="100" />
-        <el-table-column label="操作" width="320" fixed="right">
+      <el-table :data="tableData" class="modern-table" @row-click="handleRowClick">
+        <el-table-column prop="id" label="ID" width="80" align="center" />
+        <el-table-column prop="name" label="商品名称" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="code" label="商品编码" min-width="150" />
+        <el-table-column prop="spec" label="规格型号" min-width="120" />
+        <el-table-column prop="unit" label="单位" width="80" align="center" />
+        <el-table-column prop="price" label="单价" width="120" align="right">
           <template #default="{ row }">
-            <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
-            <el-button type="success" size="small" @click="handleGenerateQrCode(row)">生成二维码</el-button>
-            <el-button type="info" size="small" @click="handleViewQrCode(row)">查看二维码</el-button>
-            <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <span class="price-text">¥{{ row.price?.toFixed(2) || '0.00' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="stock" label="库存" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag :type="row.stock > 10 ? 'success' : row.stock > 0 ? 'warning' : 'danger'" size="small">
+              {{ row.stock }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="320" fixed="right" align="center">
+          <template #default="{ row }">
+            <div class="action-buttons">
+              <el-button type="primary" size="small" @click.stop="handleEdit(row)" icon="Edit">编辑</el-button>
+              <el-button type="success" size="small" @click.stop="handleGenerateQrCode(row)" icon="PictureFilled">生成码</el-button>
+              <el-button type="info" size="small" @click.stop="handleViewQrCode(row)" icon="View">查看码</el-button>
+              <el-button type="danger" size="small" @click.stop="handleDelete(row)" icon="Delete">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
 
-      <el-pagination
-        v-model:current-page="pagination.current"
-        v-model:page-size="pagination.size"
-        :total="pagination.total"
-        layout="total, prev, pager, next"
-        @current-change="loadData"
-        style="margin-top: 20px; justify-content: center;"
-      />
+      <div class="pagination-container">
+        <el-pagination
+          v-model:current-page="pagination.current"
+          v-model:page-size="pagination.size"
+          :total="pagination.total"
+          :page-sizes="[10, 20, 50, 100]"
+          layout="total, sizes, prev, pager, next, jumper"
+          @current-change="loadData"
+          @size-change="loadData"
+          background
+        />
+      </div>
     </el-card>
 
     <!-- 新增/编辑对话框 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
-      <el-form :model="form" label-width="100px">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px" class="modern-dialog">
+      <el-form :model="form" label-width="100px" class="modern-form">
         <el-form-item label="商品名称">
-          <el-input v-model="form.name" />
+          <el-input v-model="form.name" placeholder="请输入商品名称" />
         </el-form-item>
         <el-form-item label="商品编码">
-          <el-input v-model="form.code" />
+          <el-input v-model="form.code" placeholder="请输入商品编码" />
         </el-form-item>
         <el-form-item label="规格型号">
-          <el-input v-model="form.spec" />
+          <el-input v-model="form.spec" placeholder="请输入规格型号" />
         </el-form-item>
         <el-form-item label="单位">
-          <el-input v-model="form.unit" />
+          <el-input v-model="form.unit" placeholder="请输入单位" />
         </el-form-item>
         <el-form-item label="单价">
-          <el-input-number v-model="form.price" :precision="2" :min="0" />
+          <el-input-number v-model="form.price" :precision="2" :min="0" :step="0.1" style="width: 100%;" />
         </el-form-item>
         <el-form-item label="库存">
-          <el-input-number v-model="form.stock" :min="0" />
+          <el-input-number v-model="form.stock" :min="0" :step="1" style="width: 100%;" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
+        <div class="dialog-footer">
+          <el-button @click="dialogVisible = false" size="large">取消</el-button>
+          <el-button type="primary" @click="handleSubmit" size="large" icon="Check">确定</el-button>
+        </div>
       </template>
     </el-dialog>
 
     <!-- 二维码对话框 -->
-    <el-dialog v-model="qrCodeVisible" title="商品二维码" width="400px" center>
+    <el-dialog v-model="qrCodeVisible" title="商品二维码" width="450px" class="modern-dialog qrcode-dialog" center>
       <div class="qrcode-container">
-        <div v-if="qrCodeLoading" class="loading">加载中...</div>
+        <div v-if="qrCodeLoading" class="loading">
+          <el-icon class="is-loading"><Loading /></el-icon>
+          <p>加载中...</p>
+        </div>
         <div v-else-if="qrCodeUrl" class="qrcode-content">
-          <img :src="qrCodeUrl" alt="二维码" class="qrcode-image" />
+          <div class="qrcode-wrapper">
+            <img :src="qrCodeUrl" alt="二维码" class="qrcode-image" />
+          </div>
           <div class="qrcode-info">
-            <p><strong>{{ currentProduct?.name }}</strong></p>
-            <p>编码: {{ currentProduct?.code }}</p>
+            <h3>{{ currentProduct?.name }}</h3>
+            <p class="product-code">商品编码: {{ currentProduct?.code }}</p>
+            <p class="product-spec" v-if="currentProduct?.spec">规格: {{ currentProduct?.spec }}</p>
           </div>
         </div>
         <div v-else class="no-qrcode">
+          <el-icon class="empty-icon"><PictureFilled /></el-icon>
           <p>该商品还没有生成二维码</p>
-          <el-button type="primary" @click="handleGenerateQrCodeDirect">立即生成</el-button>
+          <el-button type="primary" @click="handleGenerateQrCodeDirect" size="large" icon="Plus">立即生成</el-button>
         </div>
       </div>
       <template #footer>
-        <el-button @click="qrCodeVisible = false">关闭</el-button>
-        <el-button v-if="qrCodeUrl" type="primary" @click="handleDownloadQrCode">下载二维码</el-button>
+        <div class="dialog-footer">
+          <el-button @click="qrCodeVisible = false" size="large">关闭</el-button>
+          <el-button v-if="qrCodeUrl" type="primary" @click="handleDownloadQrCode" size="large" icon="Download">下载二维码</el-button>
+        </div>
       </template>
     </el-dialog>
   </div>
@@ -175,6 +214,11 @@ const handleDelete = (row) => {
   })
 }
 
+// 行点击事件（可选）
+const handleRowClick = (row) => {
+  // 可以添加行点击逻辑，例如显示详情
+}
+
 // 生成二维码
 const handleGenerateQrCode = async (row) => {
   try {
@@ -244,7 +288,36 @@ onMounted(() => {
 
 <style scoped>
 .product-container {
-  height: 100%;
+  padding: 0;
+}
+
+/* 搜索卡片 */
+.search-card {
+  margin-bottom: 16px;
+  border: 1px solid var(--border-color);
+  transition: var(--transition-base);
+}
+
+.search-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.search-form {
+  margin: 0;
+}
+
+.search-form :deep(.el-form-item) {
+  margin-bottom: 0;
+}
+
+/* 表格卡片 */
+.table-card {
+  border: 1px solid var(--border-color);
+  transition: var(--transition-base);
+}
+
+.table-card:hover {
+  box-shadow: var(--shadow-md);
 }
 
 .card-header {
@@ -253,47 +326,192 @@ onMounted(() => {
   align-items: center;
 }
 
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.title-icon {
+  font-size: 20px;
+  color: var(--primary-color);
+}
+
+/* 现代化表格样式 */
+.modern-table {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.modern-table :deep(.el-table__header-wrapper) {
+  background-color: var(--bg-color);
+}
+
+.modern-table :deep(.el-table__header th) {
+  background-color: var(--bg-color);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 14px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.modern-table :deep(.el-table__row) {
+  transition: var(--transition-base);
+  cursor: pointer;
+}
+
+.modern-table :deep(.el-table__row:hover) {
+  background-color: var(--primary-light) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.1);
+}
+
+.modern-table :deep(.el-table__body td) {
+  border-bottom: 1px solid var(--border-color);
+  padding: 16px 0;
+}
+
+/* 价格样式 */
+.price-text {
+  color: var(--primary-color);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.action-buttons .el-button {
+  margin: 0;
+}
+
+/* 分页容器 */
+.pagination-container {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.pagination-container :deep(.el-pagination) {
+  gap: 8px;
+}
+
+/* 对话框样式 */
+.modern-dialog :deep(.el-dialog__header) {
+  border-bottom: 1px solid var(--border-color);
+  padding: 20px 24px;
+  background-color: var(--bg-color);
+}
+
+.modern-dialog :deep(.el-dialog__title) {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.modern-dialog :deep(.el-dialog__body) {
+  padding: 24px;
+}
+
+.modern-form :deep(.el-form-item__label) {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* 二维码对话框 */
+.qrcode-dialog {
+  border-radius: var(--radius-lg);
+}
+
 .qrcode-container {
-  min-height: 300px;
+  min-height: 350px;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 20px;
+}
+
+.loading {
+  text-align: center;
+  color: var(--primary-color);
+}
+
+.loading .el-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.loading p {
+  font-size: 16px;
+  margin-top: 12px;
 }
 
 .qrcode-content {
   text-align: center;
+  width: 100%;
+}
+
+.qrcode-wrapper {
+  display: inline-block;
+  padding: 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  margin-bottom: 20px;
 }
 
 .qrcode-image {
-  width: 250px;
-  height: 250px;
-  margin-bottom: 20px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  width: 280px;
+  height: 280px;
+  border-radius: var(--radius-md);
+  display: block;
 }
 
-.qrcode-info {
-  margin-top: 10px;
+.qrcode-info h3 {
+  margin: 0 0 12px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-main);
 }
 
 .qrcode-info p {
-  margin: 5px 0;
-  font-size: 16px;
-  color: #666;
+  margin: 8px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.product-code {
+  color: var(--primary-color);
+  font-weight: 500;
 }
 
 .no-qrcode {
   text-align: center;
 }
 
-.no-qrcode p {
-  font-size: 16px;
-  color: #999;
+.empty-icon {
+  font-size: 80px;
+  color: var(--text-placeholder);
   margin-bottom: 20px;
 }
 
-.loading {
+.no-qrcode p {
   font-size: 16px;
-  color: #409eff;
+  color: var(--text-secondary);
+  margin: 20px 0;
 }
 </style>

@@ -1,75 +1,71 @@
 version: '3.8'
 
 services:
-  # MySQL 数据库
+  # MySQL数据库
   mysql:
-    image: mysql:8.0
+    image: mysql:8.0.33
     container_name: oil-mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: oil_root_2024
+      MYSQL_ROOT_PASSWORD: 123456
       MYSQL_DATABASE: oil_system
-      MYSQL_USER: oil
-      MYSQL_PASSWORD: oil_password_2024
       TZ: Asia/Shanghai
     ports:
       - "3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./deploy/init.sql:/docker-entrypoint-initdb.d/init.sql
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-      - --default-time-zone=+08:00
-    networks:
-      - oil-network
+      - mysql-data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Spring Boot 后端
+  # 后端服务
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: oil-backend
     restart: always
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/oil_system?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-      SPRING_DATASOURCE_USERNAME: oil
-      SPRING_DATASOURCE_PASSWORD: oil_password_2024
-      TZ: Asia/Shanghai
     ports:
       - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/oil_system?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
     volumes:
-      - qrcode_data:/app/qrcodes
+      - qrcode-data:/app/qrcodes
     depends_on:
-      - mysql
-    networks:
-      - oil-network
+      mysql:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/product/page?current=1&size=1"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  # Nginx 前端
-  nginx:
-    image: nginx:alpine
-    container_name: oil-nginx
+  # 前端服务
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: oil-frontend
     restart: always
     ports:
       - "80:80"
-      - "443:443"
-    volumes:
-      - ./frontend/dist:/usr/share/nginx/html
-      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - backend
-    networks:
-      - oil-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-networks:
-  oil-network:
-    driver: bridge
-
+# 数据卷
 volumes:
-  mysql_data:
-  qrcode_data:
+  mysql-data:
+    driver: local
+  qrcode-data:
+    driver: local

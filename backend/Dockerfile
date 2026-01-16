@@ -1,14 +1,24 @@
-# 使用 OpenJDK 11 作为基础镜像
-FROM openjdk:11-jre-slim
+# 多阶段构建 - 第一阶段：构建应用
+FROM maven:3.8.1-openjdk-11 AS build
+WORKDIR /build
 
-# 设置工作目录
+# 复制pom.xml并下载依赖（利用Docker缓存层）
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+
+# 复制源代码并构建
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+# 第二阶段：运行应用
+FROM openjdk:11-jre-slim
 WORKDIR /app
 
 # 安装 curl（用于健康检查）
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# 复制 JAR 文件
-COPY target/oil-system-1.0.0.jar app.jar
+# 从构建阶段复制jar包
+COPY --from=build /build/target/*.jar app.jar
 
 # 创建 qrcodes 目录
 RUN mkdir -p /app/qrcodes

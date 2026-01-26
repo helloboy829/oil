@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("sys_user")
+@TableName("user")
 public class SysUser {
     @TableId(type = IdType.AUTO)
     private Long id;
@@ -17,6 +17,10 @@ public class SysUser {
     private String nickname;
 
     private String phone;
+
+    private String email;
+
+    private String role;
 
     private Integer status;
 

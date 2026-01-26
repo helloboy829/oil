@@ -27,6 +27,10 @@ public class Orders {
 
     private String remark;
 
+    private Long operatorId;
+
+    private String operatorName;
+
     @TableLogic
     private Integer deleted;
 

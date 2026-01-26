@@ -10,6 +10,17 @@ SET CHARACTER SET utf8mb4;
 CREATE DATABASE IF NOT EXISTS oil_system CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE oil_system;
 
+-- 商品分类表
+CREATE TABLE IF NOT EXISTS `product_category` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '分类ID',
+    `name` VARCHAR(50) NOT NULL COMMENT '分类名称',
+    `sort` INT DEFAULT 0 COMMENT '排序',
+    `deleted` TINYINT DEFAULT 0 COMMENT '删除标记：0-未删除，1-已删除',
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_name (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品分类表';
+
 -- 用户表
 CREATE TABLE IF NOT EXISTS `user` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '用户ID',
@@ -101,6 +112,7 @@ CREATE TABLE IF NOT EXISTS `order_item` (
     `price` DECIMAL(10,2) NOT NULL COMMENT '商品单价',
     `quantity` INT NOT NULL COMMENT '购买数量',
     `subtotal` DECIMAL(10,2) NOT NULL COMMENT '小计金额',
+    `deleted` TINYINT DEFAULT 0 COMMENT '删除标记：0-未删除，1-已删除',
     `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     INDEX idx_order_id (`order_id`),
     INDEX idx_product_id (`product_id`)

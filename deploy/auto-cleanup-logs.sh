@@ -26,7 +26,7 @@ docker exec oil-backend find /app/logs -name "*.log.gz" -mtime +30 -delete 2>/de
 
 # 3. 清理备份日志（超过 60 天）
 log_message "清理备份日志..."
-find /root/oil-logs-backup -name "*.tar.gz" -mtime +60 -delete 2>/dev/null || true
+find /oil-logs-backup -name "*.tar.gz" -mtime +60 -delete 2>/dev/null || true
 
 # 4. 显示清理后的磁盘使用情况
 log_message "当前磁盘使用情况:"

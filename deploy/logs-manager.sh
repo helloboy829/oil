@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 
 # 日志目录
 LOG_DIR="/var/lib/docker/volumes"
-BACKUP_DIR="/root/oil-logs-backup"
+BACKUP_DIR="/oil-logs-backup"
 
 # 显示菜单
 show_menu() {

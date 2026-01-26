@@ -19,7 +19,7 @@ NC='\033[0m' # No Color
 
 # 1. 停止当前运行的服务
 echo -e "${YELLOW}步骤 1/7: 停止当前运行的服务...${NC}"
-cd /root/oil
+cd /oil
 docker-compose down
 echo -e "${GREEN}✓ 服务已停止${NC}"
 echo ""
@@ -56,7 +56,7 @@ echo ""
 
 # 5. 配置 Nginx
 echo -e "${YELLOW}步骤 5/7: 配置 Nginx...${NC}"
-cp /root/oil/deploy/nginx-selfsigned.conf /etc/nginx/conf.d/oil.conf
+cp /oil/deploy/nginx-selfsigned.conf /etc/nginx/conf.d/oil.conf
 nginx -t
 echo -e "${GREEN}✓ Nginx 配置成功${NC}"
 echo ""
@@ -70,7 +70,7 @@ echo ""
 
 # 7. 启动所有服务
 echo -e "${YELLOW}步骤 7/7: 启动所有服务...${NC}"
-cd /root/oil
+cd /oil
 
 # 启动 Nginx
 systemctl start nginx

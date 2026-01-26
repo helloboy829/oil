@@ -260,18 +260,87 @@ const totalAmount = computed(() => {
   }, 0).toFixed(2)
 })
 
+// 检查摄像头权限
+const checkCameraPermission = async () => {
+  try {
+    // 检查是否支持摄像头
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return {
+        supported: false,
+        message: '您的浏览器不支持摄像头功能，请使用Chrome、Safari或Edge浏览器'
+      }
+    }
+
+    // 检查是否为HTTPS（本地localhost除外）
+    const isSecure = window.location.protocol === 'https:' ||
+                     window.location.hostname === 'localhost' ||
+                     window.location.hostname === '127.0.0.1'
+
+    if (!isSecure) {
+      return {
+        supported: false,
+        message: '摄像头功能需要HTTPS安全连接。请联系管理员配置HTTPS，或使用"上传二维码图片"功能'
+      }
+    }
+
+    // 尝试获取摄像头权限
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+    stream.getTracks().forEach(track => track.stop()) // 立即释放
+
+    return { supported: true }
+  } catch (err) {
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      return {
+        supported: false,
+        message: '摄像头权限被拒绝。请在浏览器设置中允许访问摄像头，或使用"上传二维码图片"功能'
+      }
+    } else if (err.name === 'NotFoundError') {
+      return {
+        supported: false,
+        message: '未检测到摄像头设备'
+      }
+    } else {
+      return {
+        supported: false,
+        message: '无法访问摄像头：' + err.message
+      }
+    }
+  }
+}
+
 // 开始扫码
 const startScan = async () => {
+  // 先检查权限
+  const permissionCheck = await checkCameraPermission()
+  if (!permissionCheck.supported) {
+    ElMessageBox.alert(permissionCheck.message, '提示', {
+      confirmButtonText: '知道了',
+      type: 'warning',
+      dangerouslyUseHTMLString: true
+    })
+    return
+  }
+
   try {
     html5QrCode = new Html5Qrcode("reader")
+
+    // 获取屏幕宽度，动态调整扫码框大小
+    const screenWidth = window.innerWidth
+    const qrboxSize = screenWidth < 400 ? 200 : 250
+
     await html5QrCode.start(
       { facingMode: "environment" },
-      { fps: 10, qrbox: { width: 250, height: 250 } },
+      {
+        fps: 10,
+        qrbox: { width: qrboxSize, height: qrboxSize },
+        aspectRatio: 1.0
+      },
       onScanSuccess
     )
     scanning.value = true
+    ElMessage.success('摄像头已启动，请对准二维码')
   } catch (err) {
-    ElMessage.error('无法启动摄像头，请检查权限')
+    ElMessage.error('无法启动摄像头：' + err.message)
     console.error(err)
   }
 }

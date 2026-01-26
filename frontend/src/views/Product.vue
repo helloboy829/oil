@@ -30,7 +30,46 @@
         </div>
       </template>
 
-      <el-table :data="tableData" class="modern-table" @row-click="handleRowClick">
+      <!-- 移动端卡片视图 -->
+      <div class="mobile-card-view">
+        <div v-for="item in tableData" :key="item.id" class="product-card">
+          <div class="product-card-header">
+            <div class="product-name">{{ item.name }}</div>
+            <el-tag :type="item.stock > 10 ? 'success' : item.stock > 0 ? 'warning' : 'danger'" size="small">
+              库存: {{ item.stock }}
+            </el-tag>
+          </div>
+
+          <div class="product-card-body">
+            <div class="product-info-row">
+              <span class="info-label">编码:</span>
+              <span class="info-value">{{ item.code }}</span>
+            </div>
+            <div class="product-info-row">
+              <span class="info-label">规格:</span>
+              <span class="info-value">{{ item.spec }}</span>
+            </div>
+            <div class="product-info-row">
+              <span class="info-label">单位:</span>
+              <span class="info-value">{{ item.unit }}</span>
+            </div>
+            <div class="product-info-row price-row">
+              <span class="info-label">单价:</span>
+              <span class="price-text">¥{{ item.price?.toFixed(2) || '0.00' }}</span>
+            </div>
+          </div>
+
+          <div class="product-card-actions">
+            <el-button type="primary" size="small" @click="handleEdit(item)" icon="Edit">编辑</el-button>
+            <el-button type="success" size="small" @click="handleGenerateQrCode(item)" icon="PictureFilled">生成码</el-button>
+            <el-button type="info" size="small" @click="handleViewQrCode(item)" icon="View">查看码</el-button>
+            <el-button type="danger" size="small" @click="handleDelete(item)" icon="Delete">删除</el-button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PC端表格视图 -->
+      <el-table :data="tableData" class="modern-table desktop-table-view" @row-click="handleRowClick">
         <el-table-column prop="id" label="ID" width="80" align="center" />
         <el-table-column prop="name" label="商品名称" min-width="180" show-overflow-tooltip />
         <el-table-column prop="code" label="商品编码" min-width="150" />
@@ -513,5 +552,131 @@ onMounted(() => {
   font-size: 16px;
   color: var(--text-secondary);
   margin: 20px 0;
+}
+
+/* 移动端卡片视图 */
+.mobile-card-view {
+  display: none;
+}
+
+.product-card {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-base);
+}
+
+.product-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.product-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.product-card-header .product-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main);
+  flex: 1;
+  margin-right: 12px;
+}
+
+.product-card-body {
+  margin-bottom: 12px;
+}
+
+.product-info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 14px;
+}
+
+.info-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.info-value {
+  color: var(--text-main);
+}
+
+.price-row {
+  border-top: 1px dashed var(--border-color);
+  margin-top: 8px;
+  padding-top: 12px;
+}
+
+.price-row .price-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.product-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.product-card-actions .el-button {
+  width: 100%;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  /* 隐藏PC端表格，显示移动端卡片 */
+  .desktop-table-view {
+    display: none !important;
+  }
+
+  .mobile-card-view {
+    display: block;
+  }
+
+  /* 优化搜索表单 */
+  .search-form {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .search-form :deep(.el-form-item) {
+    width: 100%;
+    margin-bottom: 12px;
+  }
+
+  .search-form :deep(.el-input) {
+    width: 100%;
+  }
+
+  /* 优化卡片头部 */
+  .card-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .card-header .el-button {
+    width: 100%;
+  }
+
+  /* 优化分页 */
+  .pagination-container :deep(.el-pagination) {
+    justify-content: center;
+  }
+
+  .pagination-container :deep(.el-pagination__sizes),
+  .pagination-container :deep(.el-pagination__jump) {
+    display: none;
+  }
 }
 </style>

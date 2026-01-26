@@ -37,7 +37,50 @@
         </div>
       </template>
 
-      <el-table :data="tableData" class="modern-table">
+      <!-- 移动端卡片视图 -->
+      <div class="mobile-card-view">
+        <div v-for="item in tableData" :key="item.id" class="order-card">
+          <div class="order-card-header">
+            <div class="order-no">{{ item.orderNo }}</div>
+            <el-tag :type="item.paymentStatus === '已结算' ? 'success' : 'warning'" size="small">
+              {{ item.paymentStatus }}
+            </el-tag>
+          </div>
+
+          <div class="order-card-body">
+            <div class="order-info-row">
+              <span class="info-label">客户:</span>
+              <span class="info-value">{{ item.customerName }}</span>
+            </div>
+            <div class="order-info-row">
+              <span class="info-label">支付方式:</span>
+              <el-tag :type="getPaymentTypeTag(item.paymentType)" size="small">
+                {{ item.paymentType }}
+              </el-tag>
+            </div>
+            <div class="order-info-row">
+              <span class="info-label">订单状态:</span>
+              <el-tag type="success" size="small">{{ item.orderStatus }}</el-tag>
+            </div>
+            <div class="order-info-row">
+              <span class="info-label">创建时间:</span>
+              <span class="info-value">{{ item.createTime }}</span>
+            </div>
+            <div class="order-info-row amount-row">
+              <span class="info-label">订单金额:</span>
+              <span class="amount-text">¥{{ item.totalAmount?.toFixed(2) || '0.00' }}</span>
+            </div>
+          </div>
+
+          <div class="order-card-actions">
+            <el-button type="primary" size="small" @click="handleView(item)" icon="View">查看详情</el-button>
+            <el-button type="danger" size="small" @click="handleDelete(item)" icon="Delete">删除</el-button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PC端表格视图 -->
+      <el-table :data="tableData" class="modern-table desktop-table-view">
         <el-table-column prop="orderNo" label="订单编号" min-width="180" show-overflow-tooltip />
         <el-table-column prop="customerName" label="客户姓名" min-width="120" />
         <el-table-column prop="totalAmount" label="订单金额" width="140" align="right">
@@ -507,5 +550,124 @@ onMounted(() => {
   color: var(--primary-color);
   font-size: 18px;
   font-weight: 600;
+}
+
+/* 移动端卡片视图 */
+.mobile-card-view {
+  display: none;
+}
+
+.order-card {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-base);
+}
+
+.order-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.order-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.order-card-header .order-no {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-main);
+  flex: 1;
+  margin-right: 12px;
+}
+
+.order-card-body {
+  margin-bottom: 12px;
+}
+
+.order-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 14px;
+}
+
+.order-info-row .info-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.order-info-row .info-value {
+  color: var(--text-main);
+}
+
+.amount-row {
+  border-top: 1px dashed var(--border-color);
+  margin-top: 8px;
+  padding-top: 12px;
+}
+
+.amount-row .amount-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.order-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.order-card-actions .el-button {
+  width: 100%;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .desktop-table-view {
+    display: none !important;
+  }
+
+  .mobile-card-view {
+    display: block;
+  }
+
+  .search-form {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .search-form :deep(.el-form-item) {
+    width: 100%;
+    margin-bottom: 12px;
+  }
+
+  .card-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .card-header .el-button {
+    width: 100%;
+  }
+
+  .pagination-container :deep(.el-pagination) {
+    justify-content: center;
+  }
+
+  .pagination-container :deep(.el-pagination__sizes),
+  .pagination-container :deep(.el-pagination__jump) {
+    display: none;
+  }
 }
 </style>

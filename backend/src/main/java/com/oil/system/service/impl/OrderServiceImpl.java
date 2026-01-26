@@ -28,9 +28,21 @@ public class OrderServiceImpl extends ServiceImpl<OrdersMapper, Orders> implemen
         // 计算订单总金额
         BigDecimal totalAmount = BigDecimal.ZERO;
         for (OrderItemDTO itemDTO : orderDTO.getItems()) {
-            Product product = productService.getById(itemDTO.getProductId());
+            // 优先使用商品编码查询，如果没有编码则使用ID查询
+            Product product = null;
+            if (itemDTO.getProductCode() != null && !itemDTO.getProductCode().isEmpty()) {
+                // 通过商品编码查询
+                product = productService.lambdaQuery()
+                        .eq(Product::getCode, itemDTO.getProductCode())
+                        .one();
+            } else if (itemDTO.getProductId() != null) {
+                // 通过商品ID查询
+                product = productService.getById(itemDTO.getProductId());
+            }
+
             if (product == null) {
-                throw new RuntimeException("商品不存在: " + itemDTO.getProductId());
+                String identifier = itemDTO.getProductCode() != null ? itemDTO.getProductCode() : String.valueOf(itemDTO.getProductId());
+                throw new RuntimeException("商品不存在: " + identifier);
             }
             // 检查库存
             if (product.getStock() < itemDTO.getQuantity()) {
@@ -57,7 +69,16 @@ public class OrderServiceImpl extends ServiceImpl<OrdersMapper, Orders> implemen
 
         // 保存订单明细并扣减库存
         for (OrderItemDTO itemDTO : orderDTO.getItems()) {
-            Product product = productService.getById(itemDTO.getProductId());
+            // 优先使用商品编码查询，如果没有编码则使用ID查询
+            Product product = null;
+            if (itemDTO.getProductCode() != null && !itemDTO.getProductCode().isEmpty()) {
+                product = productService.lambdaQuery()
+                        .eq(Product::getCode, itemDTO.getProductCode())
+                        .one();
+            } else if (itemDTO.getProductId() != null) {
+                product = productService.getById(itemDTO.getProductId());
+            }
+
             if (product != null) {
                 OrderItem item = new OrderItem();
                 item.setOrderId(order.getId());

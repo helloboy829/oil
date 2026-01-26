@@ -786,4 +786,172 @@ onUnmounted(() => {
   font-size: 18px;
   padding: 12px 20px;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  /* 容器适配 */
+  .scan-container {
+    min-height: 100vh;
+    padding: 0 0 100px 0;
+  }
+
+  /* 头部适配 */
+  .header {
+    padding: 24px 16px;
+    margin-bottom: 16px;
+  }
+
+  .header h1 {
+    font-size: 24px;
+  }
+
+  /* 扫码区域适配 */
+  .scan-section {
+    padding: 16px;
+    margin: 0 12px 16px;
+  }
+
+  .scan-btn {
+    height: 56px;
+    font-size: 18px;
+  }
+
+  .upload-btn {
+    height: 56px;
+    font-size: 16px;
+  }
+
+  /* 购物车适配 */
+  .cart-section {
+    padding: 16px;
+    margin: 0 12px 16px;
+  }
+
+  .cart-header h2 {
+    font-size: 20px;
+  }
+
+  .cart-item {
+    padding: 16px;
+  }
+
+  .item-name {
+    font-size: 18px;
+  }
+
+  .item-price {
+    font-size: 16px;
+  }
+
+  .item-actions .el-button {
+    min-width: 44px;
+    height: 44px;
+    font-size: 16px;
+  }
+
+  /* 底部栏适配 */
+  .bottom-bar {
+    padding: 16px 12px;
+  }
+
+  .bottom-total .label {
+    font-size: 16px;
+  }
+
+  .bottom-total .amount {
+    font-size: 28px;
+  }
+
+  .checkout-btn {
+    min-width: 120px;
+    height: 56px;
+    font-size: 20px;
+  }
+
+  /* 空购物车适配 */
+  .empty-cart {
+    padding: 40px 16px;
+    margin: 0 12px;
+  }
+
+  .empty-cart p {
+    font-size: 18px;
+  }
+
+  /* 对话框适配 */
+  :deep(.el-dialog) {
+    width: 95% !important;
+    margin: 0 auto;
+  }
+
+  :deep(.el-dialog__title) {
+    font-size: 20px;
+  }
+
+  :deep(.el-form-item__label) {
+    font-size: 16px;
+  }
+
+  :deep(.el-input__inner) {
+    font-size: 16px;
+  }
+
+  :deep(.el-radio-button__inner) {
+    font-size: 16px;
+    padding: 10px 16px;
+  }
+
+  :deep(.el-checkbox__label) {
+    font-size: 16px;
+  }
+
+  .order-summary {
+    padding: 16px;
+  }
+
+  .order-summary h3 {
+    font-size: 18px;
+  }
+
+  .summary-item {
+    font-size: 15px;
+  }
+
+  .summary-total {
+    font-size: 18px;
+  }
+
+  .summary-total .total {
+    font-size: 22px;
+  }
+}
+
+/* 小屏手机适配 (iPhone SE 等) */
+@media (max-width: 375px) {
+  .header h1 {
+    font-size: 20px;
+  }
+
+  .scan-btn,
+  .upload-btn {
+    height: 52px;
+    font-size: 16px;
+  }
+
+  .bottom-total .amount {
+    font-size: 24px;
+  }
+
+  .checkout-btn {
+    min-width: 100px;
+    height: 52px;
+    font-size: 18px;
+  }
+
+  .item-actions .el-button {
+    min-width: 40px;
+    height: 40px;
+    font-size: 14px;
+  }
+}
 </style>

@@ -1,11 +1,25 @@
 <template>
   <el-container class="layout-container">
-    <el-aside width="240px" class="main-aside">
+    <!-- 移动端菜单按钮 -->
+    <div class="mobile-menu-btn" @click="toggleMobileMenu" v-if="isMobile">
+      <el-icon><Menu /></el-icon>
+    </div>
+
+    <!-- 侧边栏 -->
+    <el-aside
+      :width="isMobile ? '280px' : '240px'"
+      class="main-aside"
+      :class="{ 'mobile-menu-open': mobileMenuOpen, 'mobile-hidden': isMobile && !mobileMenuOpen }"
+    >
       <div class="logo-container">
         <div class="logo-icon">Oil</div>
         <span class="logo-text">机油销售系统</span>
+        <!-- 移动端关闭按钮 -->
+        <el-icon class="mobile-close-btn" @click="closeMobileMenu" v-if="isMobile">
+          <Close />
+        </el-icon>
       </div>
-      
+
       <el-menu
         :default-active="activeMenu"
         router
@@ -13,6 +27,7 @@
         text-color="#4b5563"
         active-text-color="#4f46e5"
         background-color="#ffffff"
+        @select="handleMenuSelect"
       >
         <el-menu-item index="/scan">
           <el-icon><Camera /></el-icon>
@@ -36,7 +51,14 @@
         </el-menu-item>
       </el-menu>
     </el-aside>
-    
+
+    <!-- 移动端遮罩层 -->
+    <div
+      class="mobile-overlay"
+      v-if="isMobile && mobileMenuOpen"
+      @click="closeMobileMenu"
+    ></div>
+
     <el-container class="content-wrapper">
       <el-header class="main-header">
         <div class="header-left">
@@ -44,10 +66,10 @@
         </div>
         <div class="header-right">
           <el-avatar class="user-avatar" :size="36" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
-          <span class="user-name">管理员</span>
+          <span class="user-name" v-if="!isMobile">管理员</span>
         </div>
       </el-header>
-      
+
       <el-main class="main-content">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
@@ -60,11 +82,40 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const activeMenu = computed(() => route.path)
+
+// 移动端菜单状态
+const isMobile = ref(false)
+const mobileMenuOpen = ref(false)
+
+// 检测屏幕尺寸
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768
+  if (!isMobile.value) {
+    mobileMenuOpen.value = false
+  }
+}
+
+// 切换移动端菜单
+const toggleMobileMenu = () => {
+  mobileMenuOpen.value = !mobileMenuOpen.value
+}
+
+// 关闭移动端菜单
+const closeMobileMenu = () => {
+  mobileMenuOpen.value = false
+}
+
+// 菜单选择时关闭移动端菜单
+const handleMenuSelect = () => {
+  if (isMobile.value) {
+    closeMobileMenu()
+  }
+}
 
 const currentRouteName = computed(() => {
   const nameMap = {
@@ -76,21 +127,96 @@ const currentRouteName = computed(() => {
   }
   return nameMap[route.path] || '首页'
 })
+
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
+})
 </script>
 
 <style scoped>
 .layout-container {
   height: 100vh;
   background-color: var(--bg-color);
+  position: relative;
 }
 
+/* 移动端菜单按钮 */
+.mobile-menu-btn {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  width: 44px;
+  height: 44px;
+  background: var(--primary-color);
+  color: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1001;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  transition: all 0.3s;
+}
+
+.mobile-menu-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+}
+
+.mobile-menu-btn .el-icon {
+  font-size: 24px;
+}
+
+/* 侧边栏 */
 .main-aside {
   background-color: white;
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   box-shadow: 2px 0 8px rgba(0,0,0,0.02);
-  z-index: 10;
+  z-index: 1000;
+  transition: transform 0.3s ease;
+}
+
+/* 移动端侧边栏隐藏 */
+.main-aside.mobile-hidden {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  transform: translateX(-100%);
+}
+
+/* 移动端侧边栏显示 */
+.main-aside.mobile-menu-open {
+  transform: translateX(0);
+}
+
+/* 移动端遮罩层 */
+.mobile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .logo-container {
@@ -99,6 +225,20 @@ const currentRouteName = computed(() => {
   align-items: center;
   padding: 0 24px;
   border-bottom: 1px solid var(--border-color);
+  position: relative;
+}
+
+.mobile-close-btn {
+  position: absolute;
+  right: 16px;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: color 0.3s;
+}
+
+.mobile-close-btn:hover {
+  color: var(--primary-color);
 }
 
 .logo-icon {
@@ -190,5 +330,29 @@ const currentRouteName = computed(() => {
 .main-content {
   padding: 24px;
   overflow-y: auto;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .main-header {
+    padding: 0 16px 0 70px;
+  }
+
+  .page-title {
+    font-size: 18px;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .main-content {
+    padding: 16px;
+  }
+
+  .content-wrapper {
+    width: 100%;
+  }
 }
 </style>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>生成应用图标</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      text-align: center;
+    }
+    canvas {
+      border: 1px solid #ddd;
+      margin: 20px;
+    }
+    button {
+      background: #4f46e5;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 10px;
+    }
+    button:hover {
+      background: #4338ca;
+    }
+    .instructions {
+      background: #f3f4f6;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1>PWA 应用图标生成器</h1>
+
+  <div class="instructions">
+    <h3>使用说明:</h3>
+    <ol>
+      <li>点击下方按钮生成图标</li>
+      <li>右键点击图标 → 另存为</li>
+      <li>保存为 icon-192.png 和 icon-512.png</li>
+      <li>将图标文件放到 public 目录</li>
+    </ol>
+  </div>
+
+  <div>
+    <h3>192x192 图标</h3>
+    <canvas id="canvas192" width="192" height="192"></canvas>
+    <br>
+    <button onclick="downloadIcon(192)">下载 192x192 图标</button>
+  </div>
+
+  <div>
+    <h3>512x512 图标</h3>
+    <canvas id="canvas512" width="512" height="512"></canvas>
+    <br>
+    <button onclick="downloadIcon(512)">下载 512x512 图标</button>
+  </div>
+
+  <script>
+    function drawIcon(canvas, size) {
+      const ctx = canvas.getContext('2d');
+      const radius = size * 0.15;
+
+      // 背景
+      ctx.fillStyle = '#4f46e5';
+      ctx.beginPath();
+      ctx.roundRect(0, 0, size, size, radius);
+      ctx.fill();
+
+      // 油滴形状
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.beginPath();
+      const centerX = size / 2;
+      const startY = size * 0.25;
+      const endY = size * 0.55;
+      const width = size * 0.2;
+
+      ctx.moveTo(centerX, startY);
+      ctx.quadraticCurveTo(centerX - width, startY + width, centerX - width, endY);
+      ctx.quadraticCurveTo(centerX - width, endY + width, centerX, endY + width);
+      ctx.quadraticCurveTo(centerX + width, endY + width, centerX + width, endY);
+      ctx.quadraticCurveTo(centerX + width, startY + width, centerX, startY);
+      ctx.fill();
+
+      // 文字 "油"
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `bold ${size * 0.25}px Arial, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('油', centerX, size * 0.8);
+    }
+
+    // 绘制两个尺寸的图标
+    drawIcon(document.getElementById('canvas192'), 192);
+    drawIcon(document.getElementById('canvas512'), 512);
+
+    function downloadIcon(size) {
+      const canvas = document.getElementById(`canvas${size}`);
+      const link = document.createElement('a');
+      link.download = `icon-${size}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+  </script>
+</body>
+</html>

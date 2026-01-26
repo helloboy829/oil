@@ -17,5 +17,7 @@ export default defineConfig({
         changeOrigin: true
       }
     }
-  }
+  },
+  // 确保 public 目录文件被正确复制
+  publicDir: 'public'
 })

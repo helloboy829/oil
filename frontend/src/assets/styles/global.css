@@ -117,3 +117,133 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* ========================================
+   移动端适配 (PWA 优化)
+   ======================================== */
+
+/* 平板和手机 */
+@media (max-width: 768px) {
+  :root {
+    --font-size-base: 14px;
+    --spacing-base: 12px;
+  }
+
+  body {
+    font-size: 14px;
+  }
+
+  .page-container {
+    padding: 16px;
+  }
+
+  /* 表格横向滚动 */
+  .el-table {
+    font-size: 13px;
+  }
+
+  .el-table__body-wrapper {
+    overflow-x: auto;
+  }
+
+  /* 按钮组堆叠 */
+  .el-button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .el-button-group .el-button {
+    width: 100%;
+    margin: 0;
+  }
+
+  /* 表单优化 */
+  .el-form-item {
+    margin-bottom: 16px;
+  }
+
+  .el-form-item__label {
+    font-size: 14px;
+  }
+
+  /* 对话框适配 */
+  .el-dialog {
+    width: 95% !important;
+    margin: 5vh auto !important;
+  }
+
+  .el-dialog__body {
+    padding: 16px;
+  }
+
+  /* 卡片间距 */
+  .el-card {
+    margin-bottom: 12px;
+  }
+
+  .el-card__body {
+    padding: 16px;
+  }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+  /* 增大点击区域 */
+  .el-button {
+    min-height: 44px;
+    padding: 12px 20px;
+    font-size: 15px;
+  }
+
+  /* 输入框更大 */
+  .el-input__inner {
+    height: 44px;
+    line-height: 44px;
+    font-size: 16px; /* 防止 iOS 自动缩放 */
+  }
+
+  .el-textarea__inner {
+    font-size: 16px;
+  }
+
+  /* 选择器 */
+  .el-select .el-input__inner {
+    height: 44px;
+    line-height: 44px;
+  }
+
+  /* 表格行高 */
+  .el-table td,
+  .el-table th {
+    padding: 14px 0;
+  }
+
+  /* 链接和可点击元素 */
+  a, button, .el-link {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+/* 小屏手机 */
+@media (max-width: 480px) {
+  .page-container {
+    padding: 12px;
+  }
+
+  .el-dialog {
+    width: 98% !important;
+  }
+
+  /* 表格更紧凑 */
+  .el-table {
+    font-size: 12px;
+  }
+
+  .el-table td,
+  .el-table th {
+    padding: 10px 8px;
+  }
+}

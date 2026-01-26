@@ -54,6 +54,7 @@
             placeholder="选择月份"
             format="YYYY-MM"
             value-format="YYYY-MM"
+            :disabled-date="disabledDate"
             style="width: 100%;"
           />
         </el-form-item>
@@ -112,6 +113,15 @@ const handleSubmit = async () => {
 
 const handleExport = (row) => {
   window.open(monthlyBillApi.export(row.id))
+}
+
+// 禁用未来的日期
+const disabledDate = (time) => {
+  // 获取当前月份的第一天
+  const now = new Date()
+  const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  // 禁用当前月份及之后的月份
+  return time.getTime() >= currentMonth.getTime()
 }
 
 onMounted(() => {

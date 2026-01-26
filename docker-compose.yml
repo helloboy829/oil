@@ -40,6 +40,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/oil_system?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&serverTimezone=Asia/Shanghai
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: 123456
+      TZ: Asia/Shanghai
     volumes:
       - qrcode-data:/app/qrcodes
       - backend-logs:/app/logs

@@ -36,4 +36,4 @@ jwt:
 qrcode:
   width: 300
   height: 300
-  save-path: d:/code/oil/qrcodes/
+  save-path: /app/qrcodes/

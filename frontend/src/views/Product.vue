@@ -222,7 +222,7 @@ const handleRowClick = (row) => {
 // 生成二维码
 const handleGenerateQrCode = async (row) => {
   try {
-    const res = await axios.post(`http://localhost:8080/api/product/qrcode/${row.id}`)
+    const res = await axios.post(`/api/product/qrcode/${row.id}`)
     if (res.data.code === 200) {
       ElMessage.success('二维码生成成功！')
       loadData()
@@ -240,10 +240,10 @@ const handleViewQrCode = async (row) => {
   qrCodeUrl.value = ''
 
   try {
-    const res = await axios.get(`http://localhost:8080/api/product/qrcode/${row.id}`)
+    const res = await axios.get(`/api/product/qrcode/${row.id}`)
     if (res.data.code === 200 && res.data.data) {
       // 二维码路径格式: qrcodes/产品编码.png
-      qrCodeUrl.value = `http://localhost:8080/${res.data.data}`
+      qrCodeUrl.value = `/${res.data.data}`
     }
   } catch (error) {
     console.error('获取二维码失败', error)
@@ -258,9 +258,9 @@ const handleGenerateQrCodeDirect = async () => {
 
   qrCodeLoading.value = true
   try {
-    const res = await axios.post(`http://localhost:8080/api/product/qrcode/${currentProduct.value.id}`)
+    const res = await axios.post(`/api/product/qrcode/${currentProduct.value.id}`)
     if (res.data.code === 200 && res.data.data) {
-      qrCodeUrl.value = `http://localhost:8080/${res.data.data}`
+      qrCodeUrl.value = `/${res.data.data}`
       ElMessage.success('二维码生成成功！')
       loadData()
     }

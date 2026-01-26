@@ -45,26 +45,21 @@ CREATE TABLE IF NOT EXISTS `customer` (
 -- 商品表
 CREATE TABLE IF NOT EXISTS `product` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '商品ID',
+    `category_id` BIGINT COMMENT '分类ID',
     `name` VARCHAR(200) NOT NULL COMMENT '商品名称',
-    `category` VARCHAR(50) COMMENT '分类',
-    `brand` VARCHAR(100) COMMENT '品牌',
-    `specification` VARCHAR(100) COMMENT '规格',
+    `code` VARCHAR(100) COMMENT '商品编码',
+    `spec` VARCHAR(100) COMMENT '规格',
     `unit` VARCHAR(20) DEFAULT '瓶' COMMENT '单位',
     `price` DECIMAL(10,2) NOT NULL COMMENT '销售价格',
-    `cost` DECIMAL(10,2) COMMENT '成本价格',
     `stock` INT DEFAULT 0 COMMENT '库存数量',
-    `barcode` VARCHAR(100) COMMENT '条形码',
-    `qrcode` VARCHAR(200) COMMENT '二维码路径',
-    `image` VARCHAR(300) COMMENT '商品图片',
+    `qrcode_path` VARCHAR(200) COMMENT '二维码路径',
     `description` TEXT COMMENT '商品描述',
-    `status` TINYINT DEFAULT 1 COMMENT '状态：0-下架，1-上架',
     `deleted` TINYINT DEFAULT 0 COMMENT '删除标记：0-未删除，1-已删除',
     `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     INDEX idx_name (`name`),
-    INDEX idx_barcode (`barcode`),
-    INDEX idx_category (`category`),
-    INDEX idx_status (`status`)
+    INDEX idx_code (`code`),
+    INDEX idx_category_id (`category_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品表';
 
 -- 订单表
@@ -128,12 +123,12 @@ VALUES ('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi',
 ON DUPLICATE KEY UPDATE username=username;
 
 -- 插入测试商品数据
-INSERT INTO `product` (`name`, `category`, `brand`, `specification`, `unit`, `price`, `cost`, `stock`, `status`) VALUES
-('壳牌 Helix Ultra 5W-40 全合成机油', '全合成', '壳牌', '4L', '瓶', 298.00, 180.00, 50, 1),
-('美孚 1号 0W-40 全合成机油', '全合成', '美孚', '4L', '瓶', 368.00, 220.00, 30, 1),
-('嘉实多 磁护 5W-40 全合成机油', '全合成', '嘉实多', '4L', '瓶', 328.00, 200.00, 40, 1),
-('长城 金吉星 5W-30 半合成机油', '半合成', '长城', '4L', '瓶', 168.00, 100.00, 60, 1),
-('昆仑 天润 10W-40 矿物质机油', '矿物质', '昆仑', '4L', '瓶', 88.00, 50.00, 80, 1)
+INSERT INTO `product` (`name`, `code`, `spec`, `unit`, `price`, `stock`) VALUES
+('壳牌 Helix Ultra 5W-40 全合成机油', 'P001', '4L', '瓶', 298.00, 50),
+('美孚 1号 0W-40 全合成机油', 'P002', '4L', '瓶', 368.00, 30),
+('嘉实多 磁护 5W-40 全合成机油', 'P003', '4L', '瓶', 328.00, 40),
+('长城 金吉星 5W-30 半合成机油', 'P004', '4L', '瓶', 168.00, 60),
+('昆仑 天润 10W-40 矿物质机油', 'P005', '4L', '瓶', 88.00, 80)
 ON DUPLICATE KEY UPDATE name=name;
 
 -- 插入测试客户数据

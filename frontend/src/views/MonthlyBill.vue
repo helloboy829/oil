@@ -117,11 +117,11 @@ const handleExport = (row) => {
 
 // 禁用未来的日期
 const disabledDate = (time) => {
-  // 获取当前月份的第一天
+  // 获取下个月的第一天
   const now = new Date()
-  const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-  // 禁用当前月份及之后的月份
-  return time.getTime() >= currentMonth.getTime()
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+  // 只禁用下个月及之后的月份（当前月份可以选择）
+  return time.getTime() >= nextMonth.getTime()
 }
 
 onMounted(() => {

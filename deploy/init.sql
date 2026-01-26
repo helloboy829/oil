@@ -2,6 +2,10 @@
 -- 机油销售管理系统 - 数据库初始化脚本
 -- ==========================================
 
+-- 设置客户端字符集
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+
 -- 创建数据库
 CREATE DATABASE IF NOT EXISTS oil_system CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE oil_system;

@@ -10,8 +10,8 @@ services:
       MYSQL_ROOT_PASSWORD: 123456
       MYSQL_DATABASE: oil_system
       TZ: Asia/Shanghai
-    ports:
-      - "3306:3306"
+    # ports:
+    #   - "3306:3306"  # 注释掉端口映射，避免与宿主机MySQL冲突
     volumes:
       - mysql-data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql

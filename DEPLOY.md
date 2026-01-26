@@ -54,7 +54,7 @@ sudo yum install -y git
 **方法一：使用Git（推荐）**
 ```bash
 # 在服务器上克隆代码
-git clone <your-github-repo-url>
+git clone https://github.com/helloboy829/oil.git
 cd oil
 ```
 
@@ -124,6 +124,89 @@ curl http://localhost:8080/api/product/page?current=1&size=1
 
 # 检查前端（在浏览器访问）
 # http://服务器IP
+```
+
+### 6. 配置 HTTPS（PWA 必需）
+
+**重要：PWA 功能需要 HTTPS 才能完全工作（Service Worker、安装到桌面等）**
+
+#### 方法一：使用 Let's Encrypt 免费证书（推荐）
+
+```bash
+# 安装 Certbot
+sudo apt-get update
+sudo apt-get install -y certbot
+
+# 停止前端容器（临时）
+docker-compose stop frontend
+
+# 获取证书（替换 your-domain.com 为你的域名）
+sudo certbot certonly --standalone -d your-domain.com
+
+# 证书位置：
+# /etc/letsencrypt/live/your-domain.com/fullchain.pem
+# /etc/letsencrypt/live/your-domain.com/privkey.pem
+```
+
+#### 方法二：修改 Nginx 配置支持 HTTPS
+
+创建 `frontend/nginx-ssl.conf`：
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com;
+
+    ssl_certificate /etc/nginx/ssl/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/privkey.pem;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api {
+        proxy_pass http://backend:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+修改 `docker-compose.yml` 挂载证书：
+
+```yaml
+frontend:
+  volumes:
+    - ./frontend/nginx-ssl.conf:/etc/nginx/conf.d/default.conf
+    - /etc/letsencrypt/live/your-domain.com:/etc/nginx/ssl:ro
+  ports:
+    - "80:80"
+    - "443:443"
+```
+
+重启服务：
+
+```bash
+docker-compose up -d --build frontend
+```
+
+#### 证书自动续期
+
+```bash
+# 添加定时任务
+sudo crontab -e
+
+# 每月1号凌晨2点自动续期
+0 2 1 * * certbot renew --quiet && docker-compose restart frontend
 ```
 
 ---
@@ -244,9 +327,18 @@ docker network inspect oil_default
 
 部署成功后，可以通过以下地址访问：
 
-- **前端页面**: http://服务器IP
+- **前端页面**: https://your-domain.com（配置 HTTPS 后）或 http://服务器IP
 - **后端API**: http://服务器IP:8080/api
 - **MySQL数据库**: 服务器IP:3306
+- **H5 扫码页面**: https://your-domain.com/#/scan
+
+### PWA 安装
+
+配置 HTTPS 后，用户可以将应用安装到设备桌面：
+
+- **Android (Chrome)**: 访问网站 → 浏览器菜单 → "添加到主屏幕"
+- **iOS (Safari)**: 访问网站 → 分享按钮 → "添加到主屏幕"
+- **桌面 (Chrome/Edge)**: 访问网站 → 地址栏右侧安装图标
 
 ---
 
@@ -256,9 +348,10 @@ docker network inspect oil_default
    - 修改MySQL root密码
    - 修改JWT密钥（backend/src/main/resources/application.yml）
 
-2. **使用HTTPS**
-   - 配置SSL证书
-   - 使用Nginx反向代理
+2. **使用HTTPS（必需）**
+   - 配置SSL证书（Let's Encrypt 免费）
+   - PWA 功能需要 HTTPS 才能完全工作
+   - Service Worker 只在 HTTPS 下运行（localhost 除外）
 
 3. **限制数据库访问**
    - 不要将MySQL端口3306暴露到公网
@@ -267,6 +360,10 @@ docker network inspect oil_default
 4. **定期备份**
    - 设置定时任务备份数据库
    - 备份二维码文件
+
+5. **域名配置**
+   - PWA 安装需要有效域名（不能使用 IP 地址）
+   - 建议使用阿里云、腾讯云等提供的域名服务
 
 ---
 

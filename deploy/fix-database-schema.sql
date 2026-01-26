@@ -18,6 +18,12 @@ CREATE TABLE IF NOT EXISTS `product_category` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品分类表';
 
 -- 2. 为order_item表添加deleted字段（如果不存在）
-ALTER TABLE `order_item` ADD COLUMN IF NOT EXISTS `deleted` TINYINT DEFAULT 0 COMMENT '删除标记：0-未删除，1-已删除';
+SET @col_exists = 0;
+SELECT COUNT(*) INTO @col_exists FROM information_schema.columns
+WHERE table_schema = 'oil_system' AND table_name = 'order_item' AND column_name = 'deleted';
+SET @sql = IF(@col_exists = 0, 'ALTER TABLE `order_item` ADD COLUMN `deleted` TINYINT DEFAULT 0 COMMENT ''删除标记：0-未删除，1-已删除''', 'SELECT ''deleted already exists'' AS message');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 SELECT '数据库表结构修复完成！' AS message;

@@ -36,7 +36,46 @@
         </div>
       </template>
 
-      <el-table :data="tableData" class="modern-table">
+      <!-- 移动端卡片视图 -->
+      <div class="mobile-card-view">
+        <div v-for="item in tableData" :key="item.id" class="customer-card">
+          <div class="customer-card-header">
+            <div class="customer-name">{{ item.name }}</div>
+            <el-tag :type="item.isMonthly ? 'success' : 'info'" size="small">
+              {{ item.isMonthly ? '月结' : '普通' }}
+            </el-tag>
+          </div>
+
+          <div class="customer-card-body">
+            <div class="customer-info-row">
+              <span class="info-label">联系电话:</span>
+              <span class="info-value">{{ item.phone || '-' }}</span>
+            </div>
+            <div class="customer-info-row">
+              <span class="info-label">公司名称:</span>
+              <span class="info-value">{{ item.company || '-' }}</span>
+            </div>
+            <div v-if="item.isMonthly" class="customer-info-row">
+              <span class="info-label">信用额度:</span>
+              <span class="credit-text">¥{{ item.creditLimit?.toFixed(2) || '0.00' }}</span>
+            </div>
+            <div v-if="item.isMonthly" class="customer-info-row">
+              <span class="info-label">当前欠款:</span>
+              <span class="balance-text" :class="{ 'has-balance': item.balance > 0 }">
+                ¥{{ item.balance?.toFixed(2) || '0.00' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="customer-card-actions">
+            <el-button type="primary" size="small" @click="handleEdit(item)" icon="Edit">编辑</el-button>
+            <el-button type="danger" size="small" @click="handleDelete(item)" icon="Delete">删除</el-button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PC端表格视图 -->
+      <el-table :data="tableData" class="modern-table desktop-table-view">
         <el-table-column prop="id" label="ID" width="80" align="center" />
         <el-table-column prop="name" label="客户姓名" min-width="120" show-overflow-tooltip />
         <el-table-column prop="phone" label="联系电话" min-width="130" />
@@ -405,5 +444,154 @@ onMounted(() => {
   margin-top: 4px;
   font-size: 12px;
   color: var(--text-placeholder);
+}
+
+/* 移动端卡片视图 */
+.mobile-card-view {
+  display: none;
+}
+
+.customer-card {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: var(--transition-base);
+}
+
+.customer-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-color);
+}
+
+.customer-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.customer-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.customer-card-body {
+  margin-bottom: 12px;
+}
+
+.customer-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 14px;
+}
+
+.info-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.info-value {
+  color: var(--text-main);
+  text-align: right;
+  flex: 1;
+  margin-left: 12px;
+  word-break: break-all;
+}
+
+.customer-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.customer-card-actions .el-button {
+  flex: 1;
+}
+
+/* 移动端响应式 */
+@media (max-width: 768px) {
+  .customer-container {
+    padding: 12px;
+  }
+
+  /* 隐藏PC端表格，显示移动端卡片 */
+  .desktop-table-view {
+    display: none !important;
+  }
+
+  .mobile-card-view {
+    display: block;
+  }
+
+  /* 搜索表单优化 */
+  .search-form {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .search-form :deep(.el-form-item) {
+    margin-bottom: 12px;
+    width: 100%;
+  }
+
+  .search-form :deep(.el-input),
+  .search-form :deep(.el-select) {
+    width: 100% !important;
+  }
+
+  .search-form :deep(.el-form-item:last-child) {
+    margin-bottom: 0;
+  }
+
+  .search-form :deep(.el-button) {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  /* 卡片头部按钮 */
+  .card-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .header-title {
+    justify-content: center;
+  }
+
+  .card-header .el-button {
+    width: 100%;
+  }
+
+  /* 分页优化 */
+  .pagination-container {
+    margin-top: 16px;
+  }
+
+  .pagination-container :deep(.el-pagination) {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .pagination-container :deep(.el-pagination__sizes),
+  .pagination-container :deep(.el-pagination__jump) {
+    display: none;
+  }
+
+  /* 对话框优化 */
+  .modern-dialog :deep(.el-dialog) {
+    width: 95% !important;
+    margin: 0 auto;
+  }
+
+  .modern-form :deep(.el-col) {
+    width: 100%;
+  }
 }
 </style>

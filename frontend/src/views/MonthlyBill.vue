@@ -13,7 +13,7 @@
 
       <!-- 移动端卡片视图 -->
       <div class="mobile-card-view">
-        <div v-for="item in tableData" :key="item.id" class="bill-card">
+        <div v-for="item in formattedTableData" :key="item.id" class="bill-card">
           <div class="bill-card-header">
             <div class="bill-no">{{ item.billNo }}</div>
             <el-tag :type="item.status === '已结清' ? 'success' : item.status === '部分支付' ? 'warning' : 'info'" size="small">
@@ -29,6 +29,10 @@
             <div class="bill-info-row">
               <span class="info-label">账单月份:</span>
               <span class="info-value">{{ item.billMonth }}</span>
+            </div>
+            <div class="bill-info-row">
+              <span class="info-label">生成时间:</span>
+              <span class="info-value">{{ item.createTime }}</span>
             </div>
             <div class="bill-info-row amount-row">
               <span class="info-label">账单金额:</span>
@@ -47,12 +51,21 @@
       </div>
 
       <!-- PC端表格视图 -->
-      <el-table :data="tableData" border stripe class="desktop-table-view">
+      <el-table :data="formattedTableData" border stripe class="desktop-table-view">
         <el-table-column prop="billNo" label="账单编号" width="180" />
         <el-table-column prop="customerName" label="客户姓名" />
         <el-table-column prop="billMonth" label="账单月份" width="120" />
-        <el-table-column prop="totalAmount" label="账单金额" width="120" />
-        <el-table-column prop="paidAmount" label="已支付" width="120" />
+        <el-table-column prop="createTime" label="生成时间" width="160" />
+        <el-table-column prop="totalAmount" label="账单金额" width="120">
+          <template #default="{ row }">
+            <span>¥{{ row.totalAmount?.toFixed(2) || '0.00' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="paidAmount" label="已支付" width="120">
+          <template #default="{ row }">
+            <span>¥{{ row.paidAmount?.toFixed(2) || '0.00' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100" />
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
@@ -112,10 +125,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { monthlyBillApi } from '@/api/order'
 import { customerApi } from '@/api/index'
+import { formatDateTime } from '@/utils/format'
 
 const tableData = ref([])
 const pagination = reactive({ current: 1, size: 10, total: 0 })
@@ -124,6 +138,14 @@ const customers = ref([])
 const form = reactive({
   customerId: null,
   billMonth: ''
+})
+
+// 格式化表格数据中的时间
+const formattedTableData = computed(() => {
+  return tableData.value.map(item => ({
+    ...item,
+    createTime: formatDateTime(item.createTime)
+  }))
 })
 
 const loadData = async () => {

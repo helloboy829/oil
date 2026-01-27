@@ -1,5 +1,6 @@
 package com.oil.system.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.oil.system.dto.Result;
 import com.oil.system.entity.MonthlyBill;
@@ -18,12 +19,14 @@ public class MonthlyBillController {
     private final MonthlyBillService monthlyBillService;
 
     /**
-     * 分页查询月结账单
+     * 分页查询月结账单（按生成时间倒序）
      */
     @GetMapping("/page")
     public Result<Page<MonthlyBill>> page(@RequestParam(defaultValue = "1") Integer current,
                                            @RequestParam(defaultValue = "10") Integer size) {
-        Page<MonthlyBill> page = monthlyBillService.page(new Page<>(current, size));
+        LambdaQueryWrapper<MonthlyBill> wrapper = new LambdaQueryWrapper<>();
+        wrapper.orderByDesc(MonthlyBill::getCreateTime);
+        Page<MonthlyBill> page = monthlyBillService.page(new Page<>(current, size), wrapper);
         return Result.success(page);
     }
 

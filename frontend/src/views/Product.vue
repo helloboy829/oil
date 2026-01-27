@@ -4,12 +4,24 @@
     <el-card class="search-card" shadow="never">
       <el-form :inline="true" :model="searchForm" class="search-form">
         <el-form-item label="商品名称">
-          <el-input
+          <el-select
             v-model="searchForm.name"
-            placeholder="请输入商品名称"
+            filterable
+            remote
+            reserve-keyword
+            placeholder="请输入商品名称搜索"
+            :remote-method="searchProductName"
+            :loading="productNameLoading"
             clearable
-            prefix-icon="Search"
-          />
+            style="width: 200px;"
+          >
+            <el-option
+              v-for="name in productNameList"
+              :key="name"
+              :label="name"
+              :value="name"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="loadData" icon="Search">查询</el-button>
@@ -183,6 +195,11 @@ import { productApi } from '@/api/index'
 import axios from 'axios'
 
 const searchForm = reactive({ name: '' })
+
+// 搜索下拉列表
+const productNameList = ref([])
+const productNameLoading = ref(false)
+
 const tableData = ref([])
 const pagination = reactive({ current: 1, size: 10, total: 0 })
 const dialogVisible = ref(false)
@@ -211,6 +228,27 @@ const loadData = async () => {
   })
   tableData.value = res.data.records
   pagination.total = res.data.total
+}
+
+// 搜索商品名称
+const searchProductName = async (query) => {
+  if (!query) {
+    productNameList.value = []
+    return
+  }
+  try {
+    productNameLoading.value = true
+    const res = await productApi.getPage({
+      current: 1,
+      size: 20,
+      name: query
+    })
+    productNameList.value = res.data.records.map(item => item.name)
+  } catch (err) {
+    console.error('搜索商品名称失败', err)
+  } finally {
+    productNameLoading.value = false
+  }
 }
 
 const handleReset = () => {

@@ -4,19 +4,44 @@
     <el-card class="search-card" shadow="never">
       <el-form :inline="true" :model="searchForm" class="search-form">
         <el-form-item label="订单编号">
-          <el-input
+          <el-select
             v-model="searchForm.orderNo"
-            placeholder="请输入订单编号"
+            filterable
+            remote
+            reserve-keyword
+            placeholder="请输入订单编号搜索"
+            :remote-method="searchOrderNo"
+            :loading="orderNoLoading"
             clearable
-            prefix-icon="Search"
-          />
+            style="width: 200px;"
+          >
+            <el-option
+              v-for="orderNo in orderNoList"
+              :key="orderNo"
+              :label="orderNo"
+              :value="orderNo"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="客户姓名">
-          <el-input
+          <el-select
             v-model="searchForm.customerName"
-            placeholder="请输入客户姓名"
+            filterable
+            remote
+            reserve-keyword
+            placeholder="请输入客户姓名搜索"
+            :remote-method="searchCustomerName"
+            :loading="customerNameLoading"
             clearable
-          />
+            style="width: 200px;"
+          >
+            <el-option
+              v-for="name in customerNameList"
+              :key="name"
+              :label="name"
+              :value="name"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="loadData" icon="Search">查询</el-button>
@@ -39,7 +64,7 @@
 
       <!-- 移动端卡片视图 -->
       <div class="mobile-card-view">
-        <div v-for="item in tableData" :key="item.id" class="order-card">
+        <div v-for="item in formattedTableData" :key="item.id" class="order-card">
           <div class="order-card-header">
             <div class="order-no">{{ item.orderNo }}</div>
             <el-tag :type="item.paymentStatus === '已结算' ? 'success' : 'warning'" size="small">
@@ -80,7 +105,7 @@
       </div>
 
       <!-- PC端表格视图 -->
-      <el-table :data="tableData" class="modern-table desktop-table-view">
+      <el-table :data="formattedTableData" class="modern-table desktop-table-view">
         <el-table-column prop="orderNo" label="订单编号" min-width="180" show-overflow-tooltip />
         <el-table-column prop="customerName" label="客户姓名" min-width="120" />
         <el-table-column prop="totalAmount" label="订单金额" width="140" align="right">
@@ -290,14 +315,23 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { orderApi } from '@/api/order'
+import { customerApi } from '@/api/index'
+import { formatDateTime } from '@/utils/format'
 
 const searchForm = reactive({
   orderNo: '',
   customerName: ''
 })
+
+// 搜索下拉列表
+const orderNoList = ref([])
+const customerNameList = ref([])
+const orderNoLoading = ref(false)
+const customerNameLoading = ref(false)
+
 const tableData = ref([])
 const pagination = reactive({ current: 1, size: 10, total: 0 })
 const dialogVisible = ref(false)
@@ -310,6 +344,15 @@ const form = reactive({
   items: []
 })
 
+// 格式化表格数据中的时间
+const formattedTableData = computed(() => {
+  return tableData.value.map(item => ({
+    ...item,
+    createTime: formatDateTime(item.createTime),
+    updateTime: formatDateTime(item.updateTime)
+  }))
+})
+
 const loadData = async () => {
   const res = await orderApi.getPage({
     current: pagination.current,
@@ -319,6 +362,48 @@ const loadData = async () => {
   })
   tableData.value = res.data.records
   pagination.total = res.data.total
+}
+
+// 搜索订单编号
+const searchOrderNo = async (query) => {
+  if (!query) {
+    orderNoList.value = []
+    return
+  }
+  try {
+    orderNoLoading.value = true
+    const res = await orderApi.getPage({
+      current: 1,
+      size: 20,
+      orderNo: query
+    })
+    orderNoList.value = res.data.records.map(item => item.orderNo)
+  } catch (err) {
+    console.error('搜索订单编号失败', err)
+  } finally {
+    orderNoLoading.value = false
+  }
+}
+
+// 搜索客户姓名
+const searchCustomerName = async (query) => {
+  if (!query) {
+    customerNameList.value = []
+    return
+  }
+  try {
+    customerNameLoading.value = true
+    const res = await customerApi.getPage({
+      current: 1,
+      size: 20,
+      name: query
+    })
+    customerNameList.value = res.data.records.map(item => item.name)
+  } catch (err) {
+    console.error('搜索客户姓名失败', err)
+  } finally {
+    customerNameLoading.value = false
+  }
 }
 
 const handleReset = () => {
@@ -371,6 +456,11 @@ const handleSubmit = async () => {
 const handleView = async (row) => {
   try {
     const res = await orderApi.getById(row.id)
+    // 格式化时间
+    if (res.data.order) {
+      res.data.order.createTime = formatDateTime(res.data.order.createTime)
+      res.data.order.updateTime = formatDateTime(res.data.order.updateTime)
+    }
     currentOrder.value = res.data
     detailVisible.value = true
   } catch (err) {

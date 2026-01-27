@@ -4,12 +4,24 @@
     <el-card class="search-card" shadow="never">
       <el-form :inline="true" :model="searchForm" class="search-form">
         <el-form-item label="客户姓名">
-          <el-input
+          <el-select
             v-model="searchForm.name"
-            placeholder="请输入客户姓名"
+            filterable
+            remote
+            reserve-keyword
+            placeholder="请输入客户姓名搜索"
+            :remote-method="searchCustomerName"
+            :loading="customerNameLoading"
             clearable
-            prefix-icon="Search"
-          />
+            style="width: 200px;"
+          >
+            <el-option
+              v-for="name in customerNameList"
+              :key="name"
+              :label="name"
+              :value="name"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="月结客户">
           <el-select v-model="searchForm.isMonthly" placeholder="全部" clearable style="width: 120px;">
@@ -197,6 +209,11 @@ const searchForm = reactive({
   name: '',
   isMonthly: undefined
 })
+
+// 搜索下拉列表
+const customerNameList = ref([])
+const customerNameLoading = ref(false)
+
 const tableData = ref([])
 const pagination = reactive({ current: 1, size: 10, total: 0 })
 const dialogVisible = ref(false)
@@ -222,6 +239,27 @@ const loadData = async () => {
   })
   tableData.value = res.data.records
   pagination.total = res.data.total
+}
+
+// 搜索客户姓名
+const searchCustomerName = async (query) => {
+  if (!query) {
+    customerNameList.value = []
+    return
+  }
+  try {
+    customerNameLoading.value = true
+    const res = await customerApi.getPage({
+      current: 1,
+      size: 20,
+      name: query
+    })
+    customerNameList.value = res.data.records.map(item => item.name)
+  } catch (err) {
+    console.error('搜索客户姓名失败', err)
+  } finally {
+    customerNameLoading.value = false
+  }
 }
 
 const handleReset = () => {

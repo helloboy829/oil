@@ -672,27 +672,15 @@ onUnmounted(() => {
 
 #reader {
   width: 100% !important;
-  height: 400px !important;
-  max-height: 80vh;
-  margin-bottom: 20px;
   border-radius: 8px;
   overflow: hidden;
   background-color: #000;
-  position: relative;
 }
 
 #reader video {
   width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-}
-
-#reader canvas {
-  position: relative !important;
-  z-index: 1 !important;
+  height: auto !important;
+  display: block !important;
 }
 
 .scan-btn {
@@ -985,11 +973,6 @@ onUnmounted(() => {
   .scan-section {
     padding: 16px;
     margin: 0 12px 16px;
-  }
-
-  #reader {
-    height: 300px !important;
-    max-height: 60vh;
   }
 
   .scan-btn {

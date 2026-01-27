@@ -350,15 +350,21 @@ const startScan = async () => {
 
     // 获取屏幕宽度，动态调整扫码框大小
     const screenWidth = window.innerWidth
-    const qrboxSize = Math.min(screenWidth * 0.8, 250)
+    const qrboxSize = Math.min(screenWidth * 0.7, 250)
 
-    // 简化配置，优先保证视频流显示
+    // 使用更兼容的配置
     await html5QrCode.start(
       { facingMode: "environment" }, // 使用后置摄像头
       {
         fps: 10,
-        qrbox: { width: qrboxSize, height: qrboxSize },
-        aspectRatio: 1.0
+        qrbox: qrboxSize, // 使用数字而不是对象，更兼容
+        aspectRatio: 1.0,
+        disableFlip: false,
+        videoConstraints: {
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
       },
       onScanSuccess
     )
@@ -672,6 +678,7 @@ onUnmounted(() => {
 
 #reader {
   width: 100% !important;
+  min-height: 300px;
   border-radius: 8px;
   overflow: hidden;
   background-color: #000;
@@ -679,8 +686,15 @@ onUnmounted(() => {
 
 #reader video {
   width: 100% !important;
-  height: auto !important;
+  height: 100% !important;
   display: block !important;
+  object-fit: cover !important;
+}
+
+#reader canvas {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
 }
 
 .scan-btn {

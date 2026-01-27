@@ -678,5 +678,52 @@ onMounted(() => {
   .pagination-container :deep(.el-pagination__jump) {
     display: none;
   }
+
+  /* 对话框移动端适配 */
+  .modern-dialog :deep(.el-dialog) {
+    width: 95% !important;
+    margin: 5vh auto;
+  }
+
+  .modern-dialog :deep(.el-dialog__body) {
+    padding: 16px;
+  }
+
+  .modern-form :deep(.el-form-item__label) {
+    font-size: 14px;
+  }
+
+  .modern-form :deep(.el-input),
+  .modern-form :deep(.el-input-number),
+  .modern-form :deep(.el-select) {
+    width: 100% !important;
+  }
+
+  /* 二维码对话框移动端适配 */
+  .qrcode-dialog :deep(.el-dialog) {
+    width: 90% !important;
+  }
+
+  .qrcode-container {
+    padding: 16px;
+  }
+
+  .qrcode-container canvas {
+    max-width: 100%;
+    height: auto !important;
+  }
+
+  .product-info {
+    font-size: 14px;
+  }
+
+  .qrcode-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .qrcode-actions .el-button {
+    width: 100%;
+  }
 }
 </style>

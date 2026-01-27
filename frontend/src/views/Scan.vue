@@ -145,12 +145,31 @@
       <el-form :model="orderForm" :rules="orderRules" ref="orderFormRef" label-position="top">
         <!-- 客户姓名 -->
         <el-form-item label="客户姓名" prop="customerName">
-          <el-input
+          <el-select
             v-model="orderForm.customerName"
-            placeholder="请输入客户姓名"
+            filterable
+            remote
+            reserve-keyword
+            placeholder="请输入客户姓名搜索"
+            :remote-method="searchCustomers"
+            :loading="customerLoading"
             size="large"
+            style="width: 100%;"
             clearable
-          />
+            @change="handleCustomerChange"
+          >
+            <el-option
+              v-for="customer in customerList"
+              :key="customer.id"
+              :label="customer.name"
+              :value="customer.name"
+            >
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>{{ customer.name }}</span>
+                <el-tag v-if="customer.isMonthly" type="success" size="small" style="margin-left: 8px;">月结</el-tag>
+              </div>
+            </el-option>
+          </el-select>
         </el-form-item>
 
         <!-- 是否月结 -->
@@ -219,7 +238,7 @@
 import { ref, computed, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Html5Qrcode } from 'html5-qrcode'
-import { productApi } from '@/api/index'
+import { productApi, customerApi } from '@/api/index'
 import { orderApi } from '@/api/order'
 
 // 扫码相关
@@ -232,6 +251,11 @@ const searchResults = ref([])
 
 // 购物车
 const cart = ref([])
+
+// 客户搜索相关
+const customerList = ref([])
+const customerLoading = ref(false)
+const selectedCustomer = ref(null)
 
 // 结算相关
 const checkoutVisible = ref(false)
@@ -480,6 +504,69 @@ const clearCart = () => {
 // 显示结算对话框
 const showCheckout = () => {
   checkoutVisible.value = true
+  // 打开对话框时加载所有客户
+  loadAllCustomers()
+}
+
+// 加载所有客户（初始显示）
+const loadAllCustomers = async () => {
+  try {
+    customerLoading.value = true
+    const res = await customerApi.getPage({
+      current: 1,
+      size: 20,
+      name: ''
+    })
+    customerList.value = res.data.records || []
+  } catch (err) {
+    console.error('加载客户列表失败', err)
+  } finally {
+    customerLoading.value = false
+  }
+}
+
+// 搜索客户（远程搜索）
+const searchCustomers = async (query) => {
+  if (!query) {
+    loadAllCustomers()
+    return
+  }
+
+  try {
+    customerLoading.value = true
+    const res = await customerApi.getPage({
+      current: 1,
+      size: 20,
+      name: query
+    })
+    customerList.value = res.data.records || []
+  } catch (err) {
+    console.error('搜索客户失败', err)
+  } finally {
+    customerLoading.value = false
+  }
+}
+
+// 客户选择变化
+const handleCustomerChange = (customerName) => {
+  // 查找选中的客户
+  const customer = customerList.value.find(c => c.name === customerName)
+  if (customer) {
+    selectedCustomer.value = customer
+    // 如果是月结客户，自动勾选月结并设置支付方式
+    if (customer.isMonthly) {
+      isMonthlyCustomer.value = true
+      orderForm.value.paymentType = '月结'
+    } else {
+      isMonthlyCustomer.value = false
+      if (orderForm.value.paymentType === '月结') {
+        orderForm.value.paymentType = ''
+      }
+    }
+  } else {
+    selectedCustomer.value = null
+    isMonthlyCustomer.value = false
+  }
 }
 
 // 月结客户变化

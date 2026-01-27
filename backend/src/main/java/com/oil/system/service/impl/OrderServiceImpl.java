@@ -6,6 +6,7 @@ import com.oil.system.dto.OrderItemDTO;
 import com.oil.system.entity.*;
 import com.oil.system.mapper.OrdersMapper;
 import com.oil.system.service.*;
+import com.oil.system.vo.OrderDetailVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -104,6 +106,27 @@ public class OrderServiceImpl extends ServiceImpl<OrdersMapper, Orders> implemen
     @Override
     public void scanProduct(String productCode) {
         // 扫码逻辑，可以在前端实现
+    }
+
+    @Override
+    public OrderDetailVO getOrderDetail(Long orderId) {
+        // 查询订单基本信息
+        Orders order = getById(orderId);
+        if (order == null) {
+            throw new RuntimeException("订单不存在");
+        }
+
+        // 查询订单明细
+        List<OrderItem> items = orderItemService.lambdaQuery()
+                .eq(OrderItem::getOrderId, orderId)
+                .list();
+
+        // 组装返回结果
+        OrderDetailVO detailVO = new OrderDetailVO();
+        detailVO.setOrder(order);
+        detailVO.setItems(items);
+
+        return detailVO;
     }
 
     private String generateOrderNo() {

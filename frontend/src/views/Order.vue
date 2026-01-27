@@ -190,43 +190,93 @@
     </el-dialog>
 
     <!-- 订单详情对话框 -->
-    <el-dialog v-model="detailVisible" title="订单详情" width="700px" class="modern-dialog">
+    <el-dialog v-model="detailVisible" title="订单详情" width="900px" class="modern-dialog detail-dialog">
       <div class="order-detail" v-if="currentOrder">
+        <!-- 基本信息 -->
         <div class="detail-section">
-          <h3 class="section-title">基本信息</h3>
+          <h3 class="section-title">
+            <el-icon><InfoFilled /></el-icon>
+            <span>基本信息</span>
+          </h3>
           <div class="info-grid">
             <div class="info-item">
               <span class="label">订单编号:</span>
-              <span class="value">{{ currentOrder.orderNo }}</span>
+              <span class="value order-no">{{ currentOrder.order?.orderNo }}</span>
             </div>
             <div class="info-item">
               <span class="label">客户姓名:</span>
-              <span class="value">{{ currentOrder.customerName }}</span>
+              <span class="value">{{ currentOrder.order?.customerName }}</span>
             </div>
             <div class="info-item">
               <span class="label">订单金额:</span>
-              <span class="value amount-highlight">¥{{ currentOrder.totalAmount?.toFixed(2) }}</span>
+              <span class="value amount-highlight">¥{{ currentOrder.order?.totalAmount?.toFixed(2) }}</span>
             </div>
             <div class="info-item">
               <span class="label">支付方式:</span>
-              <el-tag :type="getPaymentTypeTag(currentOrder.paymentType)" size="small">
-                {{ currentOrder.paymentType }}
+              <el-tag :type="getPaymentTypeTag(currentOrder.order?.paymentType)" size="small">
+                {{ currentOrder.order?.paymentType }}
               </el-tag>
             </div>
             <div class="info-item">
               <span class="label">结算状态:</span>
-              <el-tag :type="currentOrder.paymentStatus === '已结算' ? 'success' : 'warning'" size="small">
-                {{ currentOrder.paymentStatus }}
+              <el-tag :type="currentOrder.order?.paymentStatus === '已结算' ? 'success' : 'warning'" size="small">
+                {{ currentOrder.order?.paymentStatus }}
               </el-tag>
             </div>
             <div class="info-item">
+              <span class="label">订单状态:</span>
+              <el-tag type="success" size="small">{{ currentOrder.order?.orderStatus }}</el-tag>
+            </div>
+            <div class="info-item">
               <span class="label">创建时间:</span>
-              <span class="value">{{ currentOrder.createTime }}</span>
+              <span class="value">{{ currentOrder.order?.createTime }}</span>
+            </div>
+            <div class="info-item" v-if="currentOrder.order?.updateTime">
+              <span class="label">更新时间:</span>
+              <span class="value">{{ currentOrder.order?.updateTime }}</span>
             </div>
           </div>
-          <div class="info-item full-width" v-if="currentOrder.remark">
+          <div class="info-item full-width" v-if="currentOrder.order?.remark">
             <span class="label">备注:</span>
-            <span class="value">{{ currentOrder.remark }}</span>
+            <span class="value remark-text">{{ currentOrder.order?.remark }}</span>
+          </div>
+        </div>
+
+        <!-- 商品明细 -->
+        <div class="detail-section">
+          <h3 class="section-title">
+            <el-icon><Goods /></el-icon>
+            <span>商品明细</span>
+          </h3>
+          <el-table :data="currentOrder.items" border class="detail-table">
+            <el-table-column type="index" label="序号" width="60" align="center" />
+            <el-table-column prop="productName" label="商品名称" min-width="150" show-overflow-tooltip />
+            <el-table-column prop="productCode" label="商品编码" width="140" align="center" />
+            <el-table-column prop="productSpec" label="规格" width="100" align="center" />
+            <el-table-column prop="unit" label="单位" width="80" align="center" />
+            <el-table-column prop="price" label="单价" width="100" align="right">
+              <template #default="{ row }">
+                <span class="price-text">¥{{ row.price?.toFixed(2) }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="quantity" label="数量" width="80" align="center" />
+            <el-table-column prop="subtotal" label="小计" width="120" align="right">
+              <template #default="{ row }">
+                <span class="subtotal-text">¥{{ row.subtotal?.toFixed(2) }}</span>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <!-- 合计 -->
+          <div class="order-summary">
+            <div class="summary-row">
+              <span class="summary-label">商品总数:</span>
+              <span class="summary-value">{{ getTotalQuantity() }} 件</span>
+            </div>
+            <div class="summary-row total-row">
+              <span class="summary-label">订单总额:</span>
+              <span class="summary-value total-amount">¥{{ currentOrder.order?.totalAmount?.toFixed(2) }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -318,9 +368,19 @@ const handleSubmit = async () => {
   loadData()
 }
 
-const handleView = (row) => {
-  currentOrder.value = row
-  detailVisible.value = true
+const handleView = async (row) => {
+  try {
+    const res = await orderApi.getById(row.id)
+    currentOrder.value = res.data
+    detailVisible.value = true
+  } catch (err) {
+    ElMessage.error('获取订单详情失败')
+  }
+}
+
+const getTotalQuantity = () => {
+  if (!currentOrder.value?.items) return 0
+  return currentOrder.value.items.reduce((sum, item) => sum + item.quantity, 0)
 }
 
 const handleDelete = (row) => {
@@ -506,22 +566,39 @@ onMounted(() => {
 }
 
 .detail-section {
-  margin-bottom: 24px;
+  margin-bottom: 32px;
+}
+
+.detail-section:last-child {
+  margin-bottom: 0;
 }
 
 .section-title {
-  margin: 0 0 16px 0;
-  padding-bottom: 12px;
+  margin: 0 0 20px 0;
+  padding: 12px 16px;
   font-size: 16px;
   font-weight: 600;
   color: var(--text-main);
-  border-bottom: 2px solid var(--primary-color);
+  background: linear-gradient(135deg, var(--primary-light), #f0f0ff);
+  border-left: 4px solid var(--primary-color);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title .el-icon {
+  font-size: 18px;
+  color: var(--primary-color);
 }
 
 .info-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px 24px;
+  padding: 16px;
+  background: var(--bg-color);
+  border-radius: var(--radius-md);
 }
 
 .info-item {
@@ -532,12 +609,15 @@ onMounted(() => {
 
 .info-item.full-width {
   grid-column: 1 / -1;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border-color);
 }
 
 .info-item .label {
   color: var(--text-secondary);
   font-size: 14px;
   min-width: 80px;
+  font-weight: 500;
 }
 
 .info-item .value {
@@ -546,10 +626,94 @@ onMounted(() => {
   font-weight: 500;
 }
 
+.info-item .order-no {
+  font-family: 'Courier New', monospace;
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.info-item .remark-text {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
 .amount-highlight {
   color: var(--primary-color);
   font-size: 18px;
+  font-weight: 700;
+}
+
+/* 商品明细表格 */
+.detail-table {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.detail-table :deep(.el-table__header th) {
+  background-color: var(--bg-color);
   font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.detail-table :deep(.el-table__body td) {
+  padding: 12px 0;
+}
+
+.price-text {
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.subtotal-text {
+  color: var(--primary-color);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* 订单汇总 */
+.order-summary {
+  margin-top: 16px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f8f9ff, #f0f0ff);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--primary-color);
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.summary-row.total-row {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 2px solid var(--primary-color);
+}
+
+.summary-label {
+  font-size: 15px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.summary-value {
+  font-size: 15px;
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.total-row .summary-label {
+  font-size: 16px;
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.total-row .total-amount {
+  font-size: 22px;
+  color: var(--primary-color);
+  font-weight: 700;
 }
 
 /* 移动端卡片视图 */
@@ -668,6 +832,117 @@ onMounted(() => {
   .pagination-container :deep(.el-pagination__sizes),
   .pagination-container :deep(.el-pagination__jump) {
     display: none;
+  }
+
+  /* 订单详情对话框移动端适配 */
+  .detail-dialog :deep(.el-dialog) {
+    width: 95% !important;
+    margin: 5vh auto;
+  }
+
+  .detail-dialog :deep(.el-dialog__body) {
+    padding: 16px;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  .order-detail {
+    padding: 0;
+  }
+
+  .detail-section {
+    margin-bottom: 24px;
+  }
+
+  .section-title {
+    font-size: 15px;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+  }
+
+  .section-title .el-icon {
+    font-size: 16px;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .info-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .info-item .label {
+    font-size: 13px;
+    min-width: auto;
+  }
+
+  .info-item .value {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .info-item.full-width {
+    padding-top: 8px;
+  }
+
+  .amount-highlight {
+    font-size: 20px;
+  }
+
+  /* 商品明细表格移动端优化 */
+  .detail-table {
+    font-size: 13px;
+  }
+
+  .detail-table :deep(.el-table__header th) {
+    padding: 8px 0;
+    font-size: 13px;
+  }
+
+  .detail-table :deep(.el-table__body td) {
+    padding: 8px 0;
+    font-size: 13px;
+  }
+
+  /* 隐藏部分列以适应小屏幕 */
+  .detail-table :deep(.el-table__body-wrapper) {
+    overflow-x: auto;
+  }
+
+  .price-text,
+  .subtotal-text {
+    font-size: 13px;
+  }
+
+  /* 订单汇总移动端优化 */
+  .order-summary {
+    padding: 12px 16px;
+    margin-top: 12px;
+  }
+
+  .summary-row {
+    padding: 6px 0;
+  }
+
+  .summary-label {
+    font-size: 14px;
+  }
+
+  .summary-value {
+    font-size: 14px;
+  }
+
+  .total-row .summary-label {
+    font-size: 15px;
+  }
+
+  .total-row .total-amount {
+    font-size: 20px;
   }
 }
 </style>

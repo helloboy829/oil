@@ -6,6 +6,7 @@ import com.oil.system.dto.OrderDTO;
 import com.oil.system.dto.Result;
 import com.oil.system.entity.Orders;
 import com.oil.system.service.OrderService;
+import com.oil.system.vo.OrderDetailVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,10 +44,10 @@ public class OrderController {
     }
 
     /**
-     * 查询订单详情
+     * 查询订单详情（包含订单明细）
      */
     @GetMapping("/{id}")
-    public Result<Orders> getById(@PathVariable Long id) {
-        return Result.success(orderService.getById(id));
+    public Result<OrderDetailVO> getById(@PathVariable Long id) {
+        return Result.success(orderService.getOrderDetail(id));
     }
 }

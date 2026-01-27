@@ -350,20 +350,15 @@ const startScan = async () => {
 
     // 获取屏幕宽度，动态调整扫码框大小
     const screenWidth = window.innerWidth
-    const qrboxSize = Math.min(screenWidth * 0.8, 300)
+    const qrboxSize = Math.min(screenWidth * 0.8, 250)
 
+    // 简化配置，优先保证视频流显示
     await html5QrCode.start(
       { facingMode: "environment" }, // 使用后置摄像头
       {
         fps: 10,
         qrbox: { width: qrboxSize, height: qrboxSize },
-        aspectRatio: 1.0,
-        disableFlip: false,
-        videoConstraints: {
-          facingMode: "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
+        aspectRatio: 1.0
       },
       onScanSuccess
     )
@@ -371,7 +366,7 @@ const startScan = async () => {
     ElMessage.success('摄像头已启动，请对准二维码')
   } catch (err) {
     ElMessage.error('无法启动摄像头：' + err.message)
-    console.error(err)
+    console.error('摄像头启动错误：', err)
   }
 }
 
@@ -682,21 +677,22 @@ onUnmounted(() => {
   margin-bottom: 20px;
   border-radius: 8px;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   background-color: #000;
+  position: relative;
 }
 
 #reader video {
   width: 100% !important;
   height: 100% !important;
-  object-fit: cover;
+  object-fit: cover !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
 }
 
 #reader canvas {
-  width: 100% !important;
-  height: 100% !important;
+  position: relative !important;
+  z-index: 1 !important;
 }
 
 .scan-btn {

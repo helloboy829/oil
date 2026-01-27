@@ -20,11 +20,21 @@ RUN rm -rf ./*
 # 从构建阶段复制构建产物
 COPY --from=build /build/dist .
 
-# 复制nginx配置
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# 创建SSL证书目录
+RUN mkdir -p /etc/nginx/ssl
+
+# 生成自签名SSL证书（用于开发/测试）
+RUN apk add --no-cache openssl && \
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/nginx/ssl/nginx-selfsigned.key \
+    -out /etc/nginx/ssl/nginx-selfsigned.crt \
+    -subj "/C=CN/ST=State/L=City/O=Organization/CN=localhost"
+
+# 复制nginx HTTPS配置
+COPY nginx-https.conf /etc/nginx/conf.d/default.conf
 
 # 暴露端口
-EXPOSE 80
+EXPOSE 80 443
 
 # 启动nginx
 CMD ["nginx", "-g", "daemon off;"]

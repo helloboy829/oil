@@ -287,15 +287,7 @@ const totalAmount = computed(() => {
 // 检查摄像头权限
 const checkCameraPermission = async () => {
   try {
-    // 检查是否支持摄像头
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      return {
-        supported: false,
-        message: '您的浏览器不支持摄像头功能，请使用Chrome、Safari或Edge浏览器'
-      }
-    }
-
-    // 检查是否为HTTPS（本地localhost除外）
+    // 先检查是否为HTTPS（本地localhost除外）
     const isSecure = window.location.protocol === 'https:' ||
                      window.location.hostname === 'localhost' ||
                      window.location.hostname === '127.0.0.1'
@@ -303,7 +295,15 @@ const checkCameraPermission = async () => {
     if (!isSecure) {
       return {
         supported: false,
-        message: '摄像头功能需要HTTPS安全连接。请联系管理员配置HTTPS，或使用"上传二维码图片"功能'
+        message: '摄像头功能需要HTTPS安全连接。<br><br>当前访问地址：' + window.location.href + '<br><br>请使用 https:// 开头的地址访问，或使用"上传二维码图片"功能'
+      }
+    }
+
+    // 检查是否支持摄像头API
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return {
+        supported: false,
+        message: '您的浏览器不支持摄像头功能。<br><br>可能原因：<br>1. 浏览器版本过旧<br>2. 未使用HTTPS访问<br>3. 浏览器不支持此功能<br><br>建议：<br>- 使用最新版Chrome、Safari或Edge浏览器<br>- 确保使用 https:// 访问<br>- 或使用"上传二维码图片"功能'
       }
     }
 
@@ -316,17 +316,17 @@ const checkCameraPermission = async () => {
     if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
       return {
         supported: false,
-        message: '摄像头权限被拒绝。请在浏览器设置中允许访问摄像头，或使用"上传二维码图片"功能'
+        message: '摄像头权限被拒绝。<br><br>请在浏览器设置中允许访问摄像头：<br>- Safari: 设置 > Safari > 摄像头<br>- Chrome: 地址栏左侧图标 > 网站设置<br><br>或使用"上传二维码图片"功能'
       }
     } else if (err.name === 'NotFoundError') {
       return {
         supported: false,
-        message: '未检测到摄像头设备'
+        message: '未检测到摄像头设备。<br><br>请确保设备有摄像头，或使用"上传二维码图片"功能'
       }
     } else {
       return {
         supported: false,
-        message: '无法访问摄像头：' + err.message
+        message: '无法访问摄像头：' + err.message + '<br><br>请尝试使用"上传二维码图片"功能'
       }
     }
   }

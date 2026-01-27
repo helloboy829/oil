@@ -83,7 +83,12 @@
               :key="item.id"
               :label="item.name"
               :value="item.id"
-            />
+            >
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>{{ item.name }}</span>
+                <el-tag v-if="item.isMonthly" type="success" size="small" style="margin-left: 8px;">月结</el-tag>
+              </div>
+            </el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="账单月份">
@@ -131,8 +136,12 @@ const loadData = async () => {
 }
 
 const loadCustomers = async () => {
-  const res = await customerApi.getMonthlyCustomers()
-  customers.value = res.data
+  // 加载所有客户（不仅限于月结客户）
+  const res = await customerApi.getPage({
+    current: 1,
+    size: 1000  // 加载所有客户
+  })
+  customers.value = res.data.records
 }
 
 const handleGenerate = () => {

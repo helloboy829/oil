@@ -32,11 +32,10 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
             throw new RuntimeException("客户不存在");
         }
 
-        // 查询该月的所有订单
+        // 查询该月的所有订单（不限制支付方式，支持所有客户）
         LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Orders::getCustomerId, customerId)
-                .like(Orders::getCreateTime, billMonth)
-                .eq(Orders::getPaymentType, "月结");
+                .like(Orders::getCreateTime, billMonth);
         List<Orders> orders = orderService.list(wrapper);
 
         // 计算总金额
@@ -52,7 +51,8 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
         bill.setBillMonth(billMonth);
         bill.setTotalAmount(totalAmount);
         bill.setPaidAmount(BigDecimal.ZERO);
-        bill.setStatus("未结算");
+        // 根据客户类型设置状态：月结客户为"未结算"，其他客户为"已结算"
+        bill.setStatus(customer.getIsMonthly() == 1 ? "未结算" : "已结算");
         save(bill);
 
         return bill;

@@ -67,6 +67,9 @@ services:
     restart: always
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - ssl-certs:/etc/nginx/ssl:ro
     depends_on:
       - backend
     healthcheck:
@@ -87,4 +90,6 @@ volumes:
   qrcode-data:
     driver: local
   backend-logs:
+    driver: local
+  ssl-certs:
     driver: local

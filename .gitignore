@@ -28,3 +28,6 @@ tmpclaude-*-cwd
 
 # Vite cache
 frontend/.vite/
+
+# Data directories (持久化数据，不提交到git)
+data/

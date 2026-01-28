@@ -2,6 +2,9 @@
 FROM node:16-alpine AS build
 WORKDIR /build
 
+# 设置npm镜像源为淘宝镜像（加速国内访问）
+RUN npm config set registry https://registry.npmmirror.com
+
 # 复制package.json并安装依赖
 COPY package*.json ./
 RUN npm install

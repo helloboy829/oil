@@ -191,11 +191,13 @@ onUnmounted(() => {
   left: 0;
   height: 100vh;
   transform: translateX(-100%);
+  pointer-events: none; /* 隐藏时不接收点击事件 */
 }
 
 /* 移动端侧边栏显示 */
 .main-aside.mobile-menu-open {
   transform: translateX(0);
+  pointer-events: auto; /* 显示时恢复点击事件 */
 }
 
 /* 移动端遮罩层 */

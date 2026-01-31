@@ -336,6 +336,13 @@ onUnmounted(() => {
 
 /* 移动端适配 */
 @media (max-width: 768px) {
+  .main-aside {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+  }
+
   .main-header {
     padding: 0 16px 0 70px;
   }

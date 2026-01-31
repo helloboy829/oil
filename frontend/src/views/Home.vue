@@ -180,7 +180,6 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   box-shadow: 2px 0 8px rgba(0,0,0,0.02);
-  z-index: 1000;
   transition: transform 0.3s ease;
 }
 
@@ -192,12 +191,14 @@ onUnmounted(() => {
   height: 100vh;
   transform: translateX(-100%);
   pointer-events: none; /* 隐藏时不接收点击事件 */
+  z-index: -1; /* 隐藏时降低层级 */
 }
 
 /* 移动端侧边栏显示 */
 .main-aside.mobile-menu-open {
   transform: translateX(0);
   pointer-events: auto; /* 显示时恢复点击事件 */
+  z-index: 1000; /* 显示时提升层级 */
 }
 
 /* 移动端遮罩层 */

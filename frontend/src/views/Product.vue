@@ -127,9 +127,9 @@
     </el-card>
 
     <!-- 新增/编辑对话框 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px" class="modern-dialog">
-      <el-form :model="form" label-width="100px" class="modern-form">
-        <el-form-item label="商品名称">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px" class="modern-dialog" lock-scroll>
+      <el-form ref="formRef" :model="form" :rules="formRules" label-width="100px" class="modern-form">
+        <el-form-item label="商品名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入商品名称" />
         </el-form-item>
         <el-form-item label="商品编码">
@@ -141,7 +141,7 @@
         <el-form-item label="单位">
           <el-input v-model="form.unit" placeholder="请输入单位" />
         </el-form-item>
-        <el-form-item label="单价">
+        <el-form-item label="单价" prop="price">
           <el-input-number v-model="form.price" :precision="2" :min="0" :step="0.1" style="width: 100%;" />
         </el-form-item>
         <el-form-item label="库存">
@@ -157,7 +157,7 @@
     </el-dialog>
 
     <!-- 二维码对话框 -->
-    <el-dialog v-model="qrCodeVisible" title="商品二维码" width="450px" class="modern-dialog qrcode-dialog" center>
+    <el-dialog v-model="qrCodeVisible" title="商品二维码" width="450px" class="modern-dialog qrcode-dialog" center lock-scroll>
       <div class="qrcode-container">
         <div v-if="qrCodeLoading" class="loading">
           <el-icon class="is-loading"><Loading /></el-icon>
@@ -194,6 +194,19 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { productApi } from '@/api/index'
 import axios from 'axios'
+
+// 表单引用
+const formRef = ref(null)
+
+// 表单验证规则
+const formRules = {
+  name: [
+    { required: true, message: '请输入商品名称', trigger: 'blur' }
+  ],
+  price: [
+    { required: true, message: '请输入商品价格', trigger: 'blur' }
+  ]
+}
 
 const searchForm = reactive({ name: '' })
 
@@ -285,6 +298,16 @@ const handleEdit = (row) => {
 }
 
 const handleSubmit = async () => {
+  // 验证表单
+  if (!formRef.value) return
+
+  try {
+    await formRef.value.validate()
+  } catch (error) {
+    ElMessage.warning('请填写必填字段')
+    return
+  }
+
   if (form.id) {
     await productApi.update(form)
   } else {

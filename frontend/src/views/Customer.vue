@@ -139,20 +139,15 @@
     </el-card>
 
     <!-- 新增/编辑对话框 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="650px" class="modern-dialog">
-      <el-form :model="form" label-width="100px" class="modern-form">
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="客户姓名">
-              <el-input v-model="form.name" placeholder="请输入客户姓名" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="联系电话">
-              <el-input v-model="form.phone" placeholder="请输入联系电话" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="650px" class="modern-dialog" lock-scroll>
+      <el-form ref="formRef" :model="form" :rules="formRules" label-width="100px" class="modern-form">
+        <el-form-item label="客户姓名" prop="name">
+          <el-input v-model="form.name" placeholder="请输入客户姓名" />
+        </el-form-item>
+
+        <el-form-item label="联系电话">
+          <el-input v-model="form.phone" placeholder="请输入联系电话" />
+        </el-form-item>
 
         <el-form-item label="公司名称">
           <el-input v-model="form.company" placeholder="请输入公司名称" />
@@ -205,6 +200,16 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { customerApi } from '@/api/index'
+
+// 表单引用
+const formRef = ref(null)
+
+// 表单验证规则
+const formRules = {
+  name: [
+    { required: true, message: '请输入客户姓名', trigger: 'blur' }
+  ]
+}
 
 const searchForm = reactive({
   name: '',
@@ -307,8 +312,13 @@ const handleEdit = (row) => {
 }
 
 const handleSubmit = async () => {
-  if (!form.name) {
-    ElMessage.warning('请输入客户姓名')
+  // 验证表单
+  if (!formRef.value) return
+
+  try {
+    await formRef.value.validate()
+  } catch (error) {
+    ElMessage.warning('请填写必填字段')
     return
   }
 

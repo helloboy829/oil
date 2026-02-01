@@ -162,9 +162,9 @@
     </el-card>
 
     <!-- 创建订单对话框 -->
-    <el-dialog v-model="dialogVisible" title="创建订单" width="800px" class="modern-dialog">
-      <el-form :model="form" label-width="100px" class="modern-form">
-        <el-form-item label="客户姓名">
+    <el-dialog v-model="dialogVisible" title="创建订单" width="800px" class="modern-dialog" lock-scroll>
+      <el-form ref="formRef" :model="form" :rules="formRules" label-width="100px" class="modern-form">
+        <el-form-item label="客户姓名" prop="customerName">
           <el-input v-model="form.customerName" placeholder="请输入客户姓名" />
         </el-form-item>
         <el-form-item label="支付方式">
@@ -217,7 +217,7 @@
     </el-dialog>
 
     <!-- 订单详情对话框 -->
-    <el-dialog v-model="detailVisible" title="订单详情" width="900px" class="modern-dialog detail-dialog">
+    <el-dialog v-model="detailVisible" title="订单详情" width="900px" class="modern-dialog detail-dialog" lock-scroll>
       <div class="order-detail" v-if="currentOrder">
         <!-- 基本信息 -->
         <div class="detail-section">
@@ -322,6 +322,16 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { orderApi } from '@/api/order'
 import { customerApi } from '@/api/index'
 import { formatDateTime } from '@/utils/format'
+
+// 表单引用
+const formRef = ref(null)
+
+// 表单验证规则
+const formRules = {
+  customerName: [
+    { required: true, message: '请输入客户姓名', trigger: 'blur' }
+  ]
+}
 
 const searchForm = reactive({
   orderNo: '',
@@ -466,10 +476,16 @@ const handleRemoveItem = (index) => {
 }
 
 const handleSubmit = async () => {
-  if (!form.customerName) {
-    ElMessage.warning('请输入客户姓名')
+  // 验证表单
+  if (!formRef.value) return
+
+  try {
+    await formRef.value.validate()
+  } catch (error) {
+    ElMessage.warning('请填写必填字段')
     return
   }
+
   if (!form.paymentType) {
     ElMessage.warning('请选择支付方式')
     return
@@ -477,6 +493,19 @@ const handleSubmit = async () => {
   if (form.items.length === 0) {
     ElMessage.warning('请至少添加一个商品')
     return
+  }
+
+  // 验证商品明细
+  for (let i = 0; i < form.items.length; i++) {
+    const item = form.items[i]
+    if (!item.productCode) {
+      ElMessage.warning(`第 ${i + 1} 行商品编码不能为空`)
+      return
+    }
+    if (!item.quantity || item.quantity <= 0) {
+      ElMessage.warning(`第 ${i + 1} 行商品数量必须大于0`)
+      return
+    }
   }
 
   await orderApi.create(form)

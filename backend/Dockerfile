@@ -14,9 +14,6 @@ RUN mvn clean package -DskipTests
 FROM openjdk:11-jre-slim
 WORKDIR /app
 
-# 安装 curl（用于健康检查）
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
-
 # 从构建阶段复制jar包
 COPY --from=build /build/target/*.jar app.jar
 

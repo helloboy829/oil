@@ -362,24 +362,43 @@ const startScan = async () => {
     const screenWidth = window.innerWidth
     const qrboxSize = Math.min(screenWidth * 0.7, 250)
 
-    // 使用更兼容的配置
-    await html5QrCode.start(
-      { facingMode: "environment" }, // 使用后置摄像头
-      {
-        fps: 10,
-        qrbox: qrboxSize, // 使用数字而不是对象，更兼容
-        aspectRatio: 1.0,
-        disableFlip: false,
-        videoConstraints: {
-          facingMode: "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      },
-      onScanSuccess
-    )
+    // 使用更简单的配置，提高兼容性
+    const config = {
+      fps: 10,
+      qrbox: qrboxSize,
+      aspectRatio: 1.0
+    }
+
+    // 尝试使用后置摄像头
+    try {
+      await html5QrCode.start(
+        { facingMode: "environment" },
+        config,
+        onScanSuccess
+      )
+    } catch (err) {
+      // 如果后置摄像头失败，尝试使用任意摄像头
+      console.log('后置摄像头启动失败，尝试使用默认摄像头', err)
+      await html5QrCode.start(
+        { facingMode: "user" },
+        config,
+        onScanSuccess
+      )
+    }
+
     scanning.value = true
     ElMessage.success('摄像头已启动，请对准二维码')
+
+    // 等待视频元素加载
+    setTimeout(() => {
+      const video = document.querySelector('#reader video')
+      if (video) {
+        console.log('视频元素已找到:', video)
+        console.log('视频尺寸:', video.videoWidth, 'x', video.videoHeight)
+      } else {
+        console.error('未找到视频元素')
+      }
+    }, 1000)
   } catch (err) {
     ElMessage.error('无法启动摄像头：' + err.message)
     console.error('摄像头启动错误：', err)

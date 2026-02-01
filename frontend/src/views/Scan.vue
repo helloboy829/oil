@@ -7,7 +7,7 @@
 
     <!-- 扫码区域 -->
     <div class="scan-section">
-      <div id="reader" v-show="scanning"></div>
+      <video id="video" ref="video" v-show="scanning" autoplay></video>
 
       <el-button
         type="primary"
@@ -242,13 +242,13 @@
 <script setup>
 import { ref, computed, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Html5Qrcode } from 'html5-qrcode'
+import { BrowserMultiFormatReader } from '@zxing/library'
 import { productApi, customerApi } from '@/api/index'
 import { orderApi } from '@/api/order'
 
 // 扫码相关
 const scanning = ref(false)
-let html5QrCode = null
+let codeReader = null
 
 // 搜索相关
 const searchKeyword = ref('')
@@ -294,137 +294,96 @@ const totalAmount = computed(() => {
   }, 0).toFixed(2)
 })
 
-// 检查摄像头权限
-const checkCameraPermission = async () => {
-  try {
-    // 先检查是否为HTTPS（本地localhost除外）
-    const isSecure = window.location.protocol === 'https:' ||
-                     window.location.hostname === 'localhost' ||
-                     window.location.hostname === '127.0.0.1'
-
-    if (!isSecure) {
-      return {
-        supported: false,
-        message: '摄像头功能需要HTTPS安全连接。<br><br>当前访问地址：' + window.location.href + '<br><br>请使用 https:// 开头的地址访问，或使用"上传二维码图片"功能'
-      }
-    }
-
-    // 检查是否支持摄像头API
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      return {
-        supported: false,
-        message: '您的浏览器不支持摄像头功能。<br><br>可能原因：<br>1. 浏览器版本过旧<br>2. 未使用HTTPS访问<br>3. 浏览器不支持此功能<br><br>建议：<br>- 使用最新版Chrome、Safari或Edge浏览器<br>- 确保使用 https:// 访问<br>- 或使用"上传二维码图片"功能'
-      }
-    }
-
-    // 尝试获取摄像头权限
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true })
-    stream.getTracks().forEach(track => track.stop()) // 立即释放
-
-    return { supported: true }
-  } catch (err) {
-    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-      return {
-        supported: false,
-        message: '摄像头权限被拒绝。<br><br>请在浏览器设置中允许访问摄像头：<br>- Safari: 设置 > Safari > 摄像头<br>- Chrome: 地址栏左侧图标 > 网站设置<br><br>或使用"上传二维码图片"功能'
-      }
-    } else if (err.name === 'NotFoundError') {
-      return {
-        supported: false,
-        message: '未检测到摄像头设备。<br><br>请确保设备有摄像头，或使用"上传二维码图片"功能'
-      }
-    } else {
-      return {
-        supported: false,
-        message: '无法访问摄像头：' + err.message + '<br><br>请尝试使用"上传二维码图片"功能'
-      }
-    }
-  }
-}
-
 // 开始扫码
 const startScan = async () => {
-  // 先检查权限
-  const permissionCheck = await checkCameraPermission()
-  if (!permissionCheck.supported) {
-    ElMessageBox.alert(permissionCheck.message, '提示', {
-      confirmButtonText: '知道了',
-      type: 'warning',
-      dangerouslyUseHTMLString: true
-    })
-    return
-  }
-
   try {
-    html5QrCode = new Html5Qrcode("reader")
+    ElMessage.info('正在启动摄像头...')
 
-    // 获取屏幕宽度，动态调整扫码框大小
-    const screenWidth = window.innerWidth
-    const qrboxSize = Math.min(screenWidth * 0.7, 250)
+    codeReader = new BrowserMultiFormatReader()
 
-    // 使用更简单的配置，提高兼容性
-    const config = {
-      fps: 10,
-      qrbox: qrboxSize,
-      aspectRatio: 1.0
+    // 获取摄像头设备列表
+    const videoDevices = await codeReader.getVideoInputDevices()
+    console.log('摄像头设备列表:', videoDevices)
+
+    if (videoDevices.length === 0) {
+      ElMessage.error('未检测到摄像头设备')
+      return
     }
 
-    // 尝试使用后置摄像头
-    try {
-      await html5QrCode.start(
-        { facingMode: "environment" },
-        config,
-        onScanSuccess
-      )
-    } catch (err) {
-      // 如果后置摄像头失败，尝试使用任意摄像头
-      console.log('后置摄像头启动失败，尝试使用默认摄像头', err)
-      await html5QrCode.start(
-        { facingMode: "user" },
-        config,
-        onScanSuccess
-      )
+    // 优先选择后置摄像头
+    let selectedDeviceId = videoDevices[videoDevices.length - 1].deviceId
+
+    if (videoDevices.length > 1) {
+      // 查找包含 'back' 和 '0' 的后置摄像头
+      const backCamera = videoDevices.find(device => {
+        const label = device.label.toLowerCase()
+        return label.includes('back') && label.includes('0')
+      })
+
+      if (backCamera) {
+        selectedDeviceId = backCamera.deviceId
+      }
     }
+
+    console.log('选择的摄像头ID:', selectedDeviceId)
+
+    // 开始扫码
+    codeReader.decodeFromVideoDevice(selectedDeviceId, 'video', (result, err) => {
+      if (result) {
+        console.log('扫码成功:', result.text)
+        onScanSuccess(result.text)
+      }
+      if (err && err.name !== 'NotFoundException') {
+        console.error('扫码错误:', err)
+      }
+    })
 
     scanning.value = true
     ElMessage.success('摄像头已启动，请对准二维码')
 
-    // 等待视频元素加载
-    setTimeout(() => {
-      const video = document.querySelector('#reader video')
-      if (video) {
-        console.log('视频元素已找到:', video)
-        console.log('视频尺寸:', video.videoWidth, 'x', video.videoHeight)
-      } else {
-        console.error('未找到视频元素')
-      }
-    }, 1000)
   } catch (err) {
+    console.error('启动摄像头失败:', err)
     ElMessage.error('无法启动摄像头：' + err.message)
-    console.error('摄像头启动错误：', err)
   }
 }
 
 // 停止扫码
 const stopScan = () => {
-  if (html5QrCode) {
-    html5QrCode.stop()
+  if (codeReader) {
+    codeReader.reset()
     scanning.value = false
+    ElMessage.info('已停止扫码')
   }
 }
 
-// 扫码成功
+// 扫码成功回调
 const onScanSuccess = async (decodedText) => {
+  // 停止扫码，避免重复识别
+  stopScan()
+
   try {
     const res = await productApi.getByCode(decodedText)
     if (res.data) {
       addProduct(res.data)
       ElMessage.success(`已添加：${res.data.name}`)
+      // 添加成功后重新开始扫码
+      setTimeout(() => {
+        startScan()
+      }, 1000)
     } else {
       ElMessage.warning('未找到该商品')
+      // 未找到商品也重新开始扫码
+      setTimeout(() => {
+        startScan()
+      }, 1000)
     }
   } catch (err) {
     ElMessage.error('查询商品失败')
+    console.error('查询商品错误:', err)
+    // 查询失败也重新开始扫码
+    setTimeout(() => {
+      startScan()
+    }, 1000)
   }
 }
 
@@ -434,21 +393,39 @@ const handleFileUpload = async (file) => {
   if (!imageFile) return
 
   try {
-    // 使用html5-qrcode扫描上传的图片
-    const html5QrCodeScanner = new Html5Qrcode("reader")
-    const decodedText = await html5QrCodeScanner.scanFile(imageFile, false)
+    // 使用 @zxing/library 扫描上传的图片
+    const reader = new BrowserMultiFormatReader()
+    const imageUrl = URL.createObjectURL(imageFile)
 
-    // 扫描成功，查询商品
-    const res = await productApi.getByCode(decodedText)
-    if (res.data) {
-      addProduct(res.data)
-      ElMessage.success(`已添加：${res.data.name}`)
-    } else {
-      ElMessage.warning('未找到该商品')
+    // 创建临时 img 元素
+    const img = document.createElement('img')
+    img.src = imageUrl
+
+    img.onload = async () => {
+      try {
+        const result = await reader.decodeFromImageElement(img)
+        console.log('图片扫码成功:', result.text)
+
+        // 扫描成功，查询商品
+        const res = await productApi.getByCode(result.text)
+        if (res.data) {
+          addProduct(res.data)
+          ElMessage.success(`已添加：${res.data.name}`)
+        } else {
+          ElMessage.warning('未找到该商品')
+        }
+
+        // 清理
+        URL.revokeObjectURL(imageUrl)
+      } catch (err) {
+        ElMessage.error('无法识别二维码，请确保图片清晰')
+        console.error('图片扫码错误:', err)
+        URL.revokeObjectURL(imageUrl)
+      }
     }
   } catch (err) {
-    ElMessage.error('无法识别二维码，请确保图片清晰')
-    console.error(err)
+    ElMessage.error('图片加载失败')
+    console.error('图片加载错误:', err)
   }
 }
 
@@ -770,29 +747,15 @@ onUnmounted(() => {
   box-shadow: var(--shadow-md);
 }
 
-#reader {
+#video {
   width: 100% !important;
   min-height: 300px;
   border-radius: 8px;
   overflow: hidden;
   background-color: #000;
-  position: relative;
-}
-
-#reader video {
-  width: 100% !important;
-  height: auto !important;
-  min-height: 300px !important;
   display: block !important;
   object-fit: cover !important;
-  background-color: #000;
-}
-
-#reader canvas {
-  position: absolute !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
+  margin-bottom: 16px;
 }
 
 .scan-btn {

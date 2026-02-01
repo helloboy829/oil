@@ -5,7 +5,9 @@
       "Bash(git config:*)",
       "Bash(ping:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(ssh root@120.79.211.158 \"cd /oil && git pull origin main\")",
+      "Bash(ssh root@120.79.211.158 \"cd /oil && docker-compose build frontend\")"
     ]
   }
 }

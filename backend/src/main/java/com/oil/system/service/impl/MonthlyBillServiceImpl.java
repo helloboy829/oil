@@ -33,9 +33,14 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
         }
 
         // 查询该月的所有订单（不限制支付方式，支持所有客户）
+        // 解析账单月份，例如 "2026-02" -> 2026年2月1日 00:00:00 到 2026年2月29日 23:59:59
+        String startTime = billMonth + "-01 00:00:00";
+        String endTime = billMonth + "-31 23:59:59"; // 使用31天覆盖所有月份
+
         LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Orders::getCustomerId, customerId)
-                .like(Orders::getCreateTime, billMonth);
+                .ge(Orders::getCreateTime, startTime)
+                .le(Orders::getCreateTime, endTime);
         List<Orders> orders = orderService.list(wrapper);
 
         // 计算总金额
@@ -66,9 +71,15 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
         }
 
         // 查询账单对应的订单明细
+        // 解析账单月份，例如 "2026-02" -> 2026年2月1日 00:00:00 到 2026年2月29日 23:59:59
+        String billMonth = bill.getBillMonth(); // 格式: YYYY-MM
+        String startTime = billMonth + "-01 00:00:00";
+        String endTime = billMonth + "-31 23:59:59"; // 使用31天覆盖所有月份
+
         LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Orders::getCustomerId, bill.getCustomerId())
-                .like(Orders::getCreateTime, bill.getBillMonth());
+                .ge(Orders::getCreateTime, startTime)
+                .le(Orders::getCreateTime, endTime);
         List<Orders> orders = orderService.list(wrapper);
 
         // 导出Excel

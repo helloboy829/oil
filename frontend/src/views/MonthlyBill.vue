@@ -46,6 +46,7 @@
 
           <div class="bill-card-actions">
             <el-button type="success" size="small" @click="handleExport(item)" icon="Download">导出Excel</el-button>
+            <el-button type="danger" size="small" @click="handleDelete(item)" icon="Delete">删除</el-button>
           </div>
         </div>
       </div>
@@ -67,10 +68,13 @@
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100" />
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button type="success" size="small" @click="handleExport(row)">
               导出Excel
+            </el-button>
+            <el-button type="danger" size="small" @click="handleDelete(row)">
+              删除
             </el-button>
           </template>
         </el-table-column>
@@ -87,9 +91,9 @@
     </el-card>
 
     <!-- 生成账单对话框 -->
-    <el-dialog v-model="dialogVisible" title="生成月结账单" width="500px">
-      <el-form :model="form" label-width="100px">
-        <el-form-item label="客户">
+    <el-dialog v-model="dialogVisible" title="生成月结账单" width="500px" lock-scroll>
+      <el-form ref="formRef" :model="form" :rules="formRules" label-width="100px">
+        <el-form-item label="客户" prop="customerId">
           <el-select v-model="form.customerId" placeholder="请选择客户" style="width: 100%;">
             <el-option
               v-for="item in customers"
@@ -104,12 +108,12 @@
             </el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="账单月份">
+        <el-form-item label="账单月份" prop="billMonth">
           <el-date-picker
             v-model="form.billMonth"
             type="month"
             placeholder="选择月份"
-            format="YYYY-MM"
+            format="YYYY年MM月"
             value-format="YYYY-MM"
             :disabled-date="disabledDate"
             style="width: 100%;"
@@ -126,10 +130,23 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { monthlyBillApi } from '@/api/order'
 import { customerApi } from '@/api/index'
 import { formatDateTime } from '@/utils/format'
+
+// 表单引用
+const formRef = ref(null)
+
+// 表单验证规则
+const formRules = {
+  customerId: [
+    { required: true, message: '请选择客户', trigger: 'change' }
+  ],
+  billMonth: [
+    { required: true, message: '请选择账单月份', trigger: 'change' }
+  ]
+}
 
 const tableData = ref([])
 const pagination = reactive({ current: 1, size: 10, total: 0 })
@@ -172,6 +189,16 @@ const handleGenerate = () => {
 }
 
 const handleSubmit = async () => {
+  // 验证表单
+  if (!formRef.value) return
+
+  try {
+    await formRef.value.validate()
+  } catch (error) {
+    ElMessage.warning('请填写必填字段')
+    return
+  }
+
   await monthlyBillApi.generate({
     customerId: form.customerId,
     billMonth: form.billMonth
@@ -183,6 +210,20 @@ const handleSubmit = async () => {
 
 const handleExport = (row) => {
   window.open(monthlyBillApi.export(row.id))
+}
+
+const handleDelete = (row) => {
+  ElMessageBox.confirm('确定删除该账单吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    await monthlyBillApi.delete(row.id)
+    ElMessage.success('删除成功')
+    loadData()
+  }).catch(() => {
+    // 用户取消删除
+  })
 }
 
 // 禁用未来的日期

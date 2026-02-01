@@ -50,4 +50,13 @@ public class OrderController {
     public Result<OrderDetailVO> getById(@PathVariable Long id) {
         return Result.success(orderService.getOrderDetail(id));
     }
+
+    /**
+     * 删除订单
+     */
+    @DeleteMapping("/{id}")
+    public Result<Void> delete(@PathVariable Long id) {
+        orderService.removeById(id);
+        return Result.success();
+    }
 }

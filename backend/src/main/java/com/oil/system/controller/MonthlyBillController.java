@@ -47,4 +47,13 @@ public class MonthlyBillController {
     public void export(@PathVariable Long id, HttpServletResponse response) {
         monthlyBillService.exportToExcel(id, response);
     }
+
+    /**
+     * 删除月结账单
+     */
+    @DeleteMapping("/{id}")
+    public Result<Void> delete(@PathVariable Long id) {
+        monthlyBillService.removeById(id);
+        return Result.success();
+    }
 }

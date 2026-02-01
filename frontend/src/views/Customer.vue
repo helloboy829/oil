@@ -14,6 +14,7 @@
             :loading="customerNameLoading"
             clearable
             style="width: 200px;"
+            @focus="loadAllCustomerNames"
           >
             <el-option
               v-for="name in customerNameList"
@@ -213,6 +214,7 @@ const searchForm = reactive({
 // 搜索下拉列表
 const customerNameList = ref([])
 const customerNameLoading = ref(false)
+const allCustomerNames = ref([]) // 缓存所有客户姓名
 
 const tableData = ref([])
 const pagination = reactive({ current: 1, size: 10, total: 0 })
@@ -241,25 +243,39 @@ const loadData = async () => {
   pagination.total = res.data.total
 }
 
-// 搜索客户姓名
-const searchCustomerName = async (query) => {
-  if (!query) {
-    customerNameList.value = []
+// 加载所有客户姓名（点击搜索框时）
+const loadAllCustomerNames = async () => {
+  if (allCustomerNames.value.length > 0) {
+    customerNameList.value = allCustomerNames.value
     return
   }
+
   try {
     customerNameLoading.value = true
     const res = await customerApi.getPage({
       current: 1,
-      size: 20,
-      name: query
+      size: 1000
     })
-    customerNameList.value = res.data.records.map(item => item.name)
+    allCustomerNames.value = res.data.records.map(item => item.name)
+    customerNameList.value = allCustomerNames.value
   } catch (err) {
-    console.error('搜索客户姓名失败', err)
+    console.error('加载客户姓名失败', err)
   } finally {
     customerNameLoading.value = false
   }
+}
+
+// 搜索客户姓名
+const searchCustomerName = async (query) => {
+  if (!query) {
+    customerNameList.value = allCustomerNames.value
+    return
+  }
+
+  // 从缓存中模糊匹配
+  customerNameList.value = allCustomerNames.value.filter(name =>
+    name.toLowerCase().includes(query.toLowerCase())
+  )
 }
 
 const handleReset = () => {

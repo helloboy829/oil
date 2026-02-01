@@ -14,6 +14,7 @@
             :loading="orderNoLoading"
             clearable
             style="width: 200px;"
+            @focus="loadAllOrderNos"
           >
             <el-option
               v-for="orderNo in orderNoList"
@@ -34,6 +35,7 @@
             :loading="customerNameLoading"
             clearable
             style="width: 200px;"
+            @focus="loadAllCustomerNames"
           >
             <el-option
               v-for="name in customerNameList"
@@ -331,6 +333,8 @@ const orderNoList = ref([])
 const customerNameList = ref([])
 const orderNoLoading = ref(false)
 const customerNameLoading = ref(false)
+const allOrderNos = ref([]) // 缓存所有订单编号
+const allCustomerNames = ref([]) // 缓存所有客户姓名
 
 const tableData = ref([])
 const pagination = reactive({ current: 1, size: 10, total: 0 })
@@ -364,46 +368,74 @@ const loadData = async () => {
   pagination.total = res.data.total
 }
 
-// 搜索订单编号
-const searchOrderNo = async (query) => {
-  if (!query) {
-    orderNoList.value = []
+// 加载所有订单编号（点击搜索框时）
+const loadAllOrderNos = async () => {
+  if (allOrderNos.value.length > 0) {
+    orderNoList.value = allOrderNos.value
     return
   }
+
   try {
     orderNoLoading.value = true
     const res = await orderApi.getPage({
       current: 1,
-      size: 20,
-      orderNo: query
+      size: 1000
     })
-    orderNoList.value = res.data.records.map(item => item.orderNo)
+    allOrderNos.value = res.data.records.map(item => item.orderNo)
+    orderNoList.value = allOrderNos.value
   } catch (err) {
-    console.error('搜索订单编号失败', err)
+    console.error('加载订单编号失败', err)
   } finally {
     orderNoLoading.value = false
+  }
+}
+
+// 搜索订单编号
+const searchOrderNo = async (query) => {
+  if (!query) {
+    orderNoList.value = allOrderNos.value
+    return
+  }
+
+  // 从缓存中模糊匹配
+  orderNoList.value = allOrderNos.value.filter(orderNo =>
+    orderNo.toLowerCase().includes(query.toLowerCase())
+  )
+}
+
+// 加载所有客户姓名（点击搜索框时）
+const loadAllCustomerNames = async () => {
+  if (allCustomerNames.value.length > 0) {
+    customerNameList.value = allCustomerNames.value
+    return
+  }
+
+  try {
+    customerNameLoading.value = true
+    const res = await customerApi.getPage({
+      current: 1,
+      size: 1000
+    })
+    allCustomerNames.value = res.data.records.map(item => item.name)
+    customerNameList.value = allCustomerNames.value
+  } catch (err) {
+    console.error('加载客户姓名失败', err)
+  } finally {
+    customerNameLoading.value = false
   }
 }
 
 // 搜索客户姓名
 const searchCustomerName = async (query) => {
   if (!query) {
-    customerNameList.value = []
+    customerNameList.value = allCustomerNames.value
     return
   }
-  try {
-    customerNameLoading.value = true
-    const res = await customerApi.getPage({
-      current: 1,
-      size: 20,
-      name: query
-    })
-    customerNameList.value = res.data.records.map(item => item.name)
-  } catch (err) {
-    console.error('搜索客户姓名失败', err)
-  } finally {
-    customerNameLoading.value = false
-  }
+
+  // 从缓存中模糊匹配
+  customerNameList.value = allCustomerNames.value.filter(name =>
+    name.toLowerCase().includes(query.toLowerCase())
+  )
 }
 
 const handleReset = () => {

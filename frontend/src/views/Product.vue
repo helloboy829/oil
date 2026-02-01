@@ -14,6 +14,7 @@
             :loading="productNameLoading"
             clearable
             style="width: 200px;"
+            @focus="loadAllProductNames"
           >
             <el-option
               v-for="name in productNameList"
@@ -199,6 +200,7 @@ const searchForm = reactive({ name: '' })
 // 搜索下拉列表
 const productNameList = ref([])
 const productNameLoading = ref(false)
+const allProductNames = ref([]) // 缓存所有商品名称
 
 const tableData = ref([])
 const pagination = reactive({ current: 1, size: 10, total: 0 })
@@ -230,25 +232,39 @@ const loadData = async () => {
   pagination.total = res.data.total
 }
 
-// 搜索商品名称
-const searchProductName = async (query) => {
-  if (!query) {
-    productNameList.value = []
+// 加载所有商品名称（点击搜索框时）
+const loadAllProductNames = async () => {
+  if (allProductNames.value.length > 0) {
+    productNameList.value = allProductNames.value
     return
   }
+
   try {
     productNameLoading.value = true
     const res = await productApi.getPage({
       current: 1,
-      size: 20,
-      name: query
+      size: 1000
     })
-    productNameList.value = res.data.records.map(item => item.name)
+    allProductNames.value = res.data.records.map(item => item.name)
+    productNameList.value = allProductNames.value
   } catch (err) {
-    console.error('搜索商品名称失败', err)
+    console.error('加载商品名称失败', err)
   } finally {
     productNameLoading.value = false
   }
+}
+
+// 搜索商品名称
+const searchProductName = async (query) => {
+  if (!query) {
+    productNameList.value = allProductNames.value
+    return
+  }
+
+  // 从缓存中模糊匹配
+  productNameList.value = allProductNames.value.filter(name =>
+    name.toLowerCase().includes(query.toLowerCase())
+  )
 }
 
 const handleReset = () => {

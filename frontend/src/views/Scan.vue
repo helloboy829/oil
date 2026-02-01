@@ -45,33 +45,37 @@
 
       <!-- 手动搜索（备用） -->
       <div class="manual-search">
-        <el-input
-          v-model="searchKeyword"
+        <el-select
+          v-model="selectedProduct"
+          filterable
+          remote
+          reserve-keyword
           placeholder="扫不出来？输入商品名称搜索"
+          :remote-method="searchProductRemote"
+          :loading="productLoading"
           size="large"
+          style="width: 100%;"
           clearable
-          @keyup.enter="searchProduct"
+          @change="handleProductSelect"
+          @focus="loadAllProducts"
         >
-          <template #append>
-            <el-button @click="searchProduct">搜索</el-button>
-          </template>
-        </el-input>
-
-        <!-- 搜索结果 -->
-        <div v-if="searchResults.length > 0" class="search-results">
-          <div
-            v-for="product in searchResults"
+          <el-option
+            v-for="product in productList"
             :key="product.id"
-            class="product-item"
-            @click="addProduct(product)"
+            :label="product.name"
+            :value="product.id"
           >
-            <div class="product-name">{{ product.name }}</div>
-            <div class="product-info">
-              <span class="product-price">¥{{ product.price }}</span>
-              <span class="product-stock">库存: {{ product.stock }}</span>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span>{{ product.name }}</span>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <span style="color: #f56c6c; font-weight: bold;">¥{{ product.price }}</span>
+                <el-tag size="small" :type="product.stock > 10 ? 'success' : 'warning'">
+                  库存: {{ product.stock }}
+                </el-tag>
+              </div>
             </div>
-          </div>
-        </div>
+          </el-option>
+        </el-select>
       </div>
     </div>
 
@@ -157,6 +161,7 @@
             style="width: 100%;"
             clearable
             @change="handleCustomerChange"
+            @focus="loadAllCustomers"
           >
             <el-option
               v-for="customer in customerList"
@@ -248,6 +253,10 @@ let html5QrCode = null
 // 搜索相关
 const searchKeyword = ref('')
 const searchResults = ref([])
+const selectedProduct = ref(null)
+const productList = ref([])
+const productLoading = ref(false)
+const allProducts = ref([]) // 缓存所有商品
 
 // 购物车
 const cart = ref([])
@@ -256,6 +265,7 @@ const cart = ref([])
 const customerList = ref([])
 const customerLoading = ref(false)
 const selectedCustomer = ref(null)
+const allCustomers = ref([]) // 缓存所有客户
 
 // 结算相关
 const checkoutVisible = ref(false)
@@ -423,7 +433,57 @@ const handleFileUpload = async (file) => {
   }
 }
 
-// 搜索商品
+// 加载所有商品（点击搜索框时）
+const loadAllProducts = async () => {
+  if (allProducts.value.length > 0) {
+    // 如果已经缓存了，直接使用
+    productList.value = allProducts.value
+    return
+  }
+
+  try {
+    productLoading.value = true
+    const res = await productApi.getPage({
+      current: 1,
+      size: 1000 // 获取所有商品
+    })
+    allProducts.value = res.data?.records || []
+    productList.value = allProducts.value
+  } catch (err) {
+    ElMessage.error('加载商品列表失败')
+  } finally {
+    productLoading.value = false
+  }
+}
+
+// 远程搜索商品（输入时模糊匹配）
+const searchProductRemote = async (query) => {
+  if (!query) {
+    // 如果没有输入，显示所有商品
+    productList.value = allProducts.value
+    return
+  }
+
+  // 从缓存中模糊匹配
+  productList.value = allProducts.value.filter(product =>
+    product.name.toLowerCase().includes(query.toLowerCase())
+  )
+}
+
+// 选择商品后添加到购物车
+const handleProductSelect = async (productId) => {
+  if (!productId) return
+
+  const product = productList.value.find(p => p.id === productId)
+  if (product) {
+    addProduct(product)
+    ElMessage.success(`已添加：${product.name}`)
+    // 清空选择
+    selectedProduct.value = null
+  }
+}
+
+// 搜索商品（保留旧方法以防其他地方使用）
 const searchProduct = async () => {
   if (!searchKeyword.value.trim()) {
     ElMessage.warning('请输入商品名称')
@@ -515,16 +575,22 @@ const showCheckout = () => {
   loadAllCustomers()
 }
 
-// 加载所有客户（初始显示）
+// 加载所有客户（点击搜索框时）
 const loadAllCustomers = async () => {
+  if (allCustomers.value.length > 0) {
+    // 如果已经缓存了，直接使用
+    customerList.value = allCustomers.value
+    return
+  }
+
   try {
     customerLoading.value = true
     const res = await customerApi.getPage({
       current: 1,
-      size: 20,
-      name: ''
+      size: 1000 // 获取所有客户
     })
-    customerList.value = res.data.records || []
+    allCustomers.value = res.data.records || []
+    customerList.value = allCustomers.value
   } catch (err) {
     console.error('加载客户列表失败', err)
   } finally {
@@ -539,6 +605,15 @@ const searchCustomers = async (query) => {
     return
   }
 
+  // 从缓存中模糊匹配
+  if (allCustomers.value.length > 0) {
+    customerList.value = allCustomers.value.filter(customer =>
+      customer.name.toLowerCase().includes(query.toLowerCase())
+    )
+    return
+  }
+
+  // 如果缓存为空，从服务器搜索
   try {
     customerLoading.value = true
     const res = await customerApi.getPage({
@@ -682,19 +757,23 @@ onUnmounted(() => {
   border-radius: 8px;
   overflow: hidden;
   background-color: #000;
+  position: relative;
 }
 
 #reader video {
   width: 100% !important;
-  height: 100% !important;
+  height: auto !important;
+  min-height: 300px !important;
   display: block !important;
   object-fit: cover !important;
+  background-color: #000;
 }
 
 #reader canvas {
   position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
 }
 
 .scan-btn {

@@ -7,6 +7,7 @@
 
     <!-- 扫码区域 -->
     <div class="scan-section">
+      <!-- 扫码时显示视频窗口 -->
       <video id="video" ref="video" v-show="scanning" autoplay></video>
 
       <el-button
@@ -16,7 +17,7 @@
         v-if="!scanning"
         class="scan-btn"
       >
-        开始扫码
+        📷 开始扫码
       </el-button>
 
       <el-button
@@ -26,8 +27,13 @@
         v-else
         class="scan-btn"
       >
-        停止扫码
+        ⏸️ 停止扫码
       </el-button>
+
+      <!-- 扫码状态提示 -->
+      <div v-if="scanning" class="scan-tip-text">
+        <p>📱 请将摄像头对准二维码</p>
+      </div>
 
       <!-- 上传二维码图片（电脑端使用） -->
       <div class="upload-section">
@@ -364,12 +370,36 @@ const onScanSuccess = async (decodedText) => {
   try {
     const res = await productApi.getByCode(decodedText)
     if (res.data) {
-      addProduct(res.data)
-      ElMessage.success(`已添加：${res.data.name}`)
-      // 添加成功后重新开始扫码
-      setTimeout(() => {
-        startScan()
-      }, 1000)
+      const product = res.data
+
+      // 弹出确认框
+      ElMessageBox.confirm(
+        `商品名称：${product.name}\n价格：¥${product.price}\n库存：${product.stock}\n\n是否添加到购物车？`,
+        '扫码成功',
+        {
+          confirmButtonText: '添加',
+          cancelButtonText: '取消',
+          type: 'success',
+          distinguishCancelAndClose: true
+        }
+      ).then(() => {
+        // 用户点击"添加"
+        addProduct(product)
+        ElMessage.success(`已添加：${product.name}`)
+        // 添加成功后重新开始扫码
+        setTimeout(() => {
+          startScan()
+        }, 500)
+      }).catch((action) => {
+        // 用户点击"取消"或关闭
+        if (action === 'cancel') {
+          ElMessage.info('已取消添加')
+        }
+        // 重新开始扫码
+        setTimeout(() => {
+          startScan()
+        }, 500)
+      })
     } else {
       ElMessage.warning('未找到该商品')
       // 未找到商品也重新开始扫码
@@ -756,6 +786,29 @@ onUnmounted(() => {
   display: block !important;
   object-fit: cover !important;
   margin-bottom: 16px;
+}
+
+/* 扫码提示文字 */
+.scan-tip-text {
+  text-align: center;
+  padding: 20px;
+}
+
+.scan-tip-text p {
+  font-size: 16px;
+  color: var(--primary-color);
+  margin: 0;
+  font-weight: 500;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 .scan-btn {

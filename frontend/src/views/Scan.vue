@@ -708,6 +708,7 @@ const submitOrder = async () => {
     }))
 
     await orderApi.create({
+      customerId: selectedCustomer.value?.id,
       customerName: orderForm.value.customerName,
       paymentType: orderForm.value.paymentType,
       remark: orderForm.value.remark,

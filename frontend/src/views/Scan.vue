@@ -698,15 +698,33 @@ const submitOrder = async () => {
     return
   }
 
-  // 验证客户是否存在
-  if (!selectedCustomer.value || !selectedCustomer.value.id) {
-    ElMessage.error('请从下拉列表中选择已存在的客户')
-    return
-  }
-
   submitting.value = true
 
   try {
+    // 如果没有选中客户，尝试通过客户名模糊匹配
+    let customerId = selectedCustomer.value?.id
+    if (!customerId && orderForm.value.customerName) {
+      // 确保客户列表已加载
+      if (allCustomers.value.length === 0) {
+        await loadAllCustomers()
+      }
+      // 模糊匹配客户
+      const matchedCustomer = allCustomers.value.find(c =>
+        c.name.toLowerCase().includes(orderForm.value.customerName.toLowerCase()) ||
+        orderForm.value.customerName.toLowerCase().includes(c.name.toLowerCase())
+      )
+      if (matchedCustomer) {
+        customerId = matchedCustomer.id
+      }
+    }
+
+    // 如果还是没有customerId，提示用户
+    if (!customerId) {
+      ElMessage.error('请从下拉列表中选择客户，或先在客户管理中添加该客户')
+      submitting.value = false
+      return
+    }
+
     const items = cart.value.map(item => ({
       productId: item.id,
       productCode: item.code,
@@ -714,7 +732,7 @@ const submitOrder = async () => {
     }))
 
     await orderApi.create({
-      customerId: selectedCustomer.value.id,
+      customerId: customerId,
       customerName: orderForm.value.customerName,
       paymentType: orderForm.value.paymentType,
       remark: orderForm.value.remark,

@@ -205,7 +205,7 @@ const handleSubmit = async () => {
   })
   ElMessage.success('生成成功')
   dialogVisible.value = false
-  loadData()
+  await loadData()
 }
 
 const handleExport = (row) => {
@@ -220,7 +220,7 @@ const handleDelete = (row) => {
   }).then(async () => {
     await monthlyBillApi.delete(row.id)
     ElMessage.success('删除成功')
-    loadData()
+    await loadData()
   }).catch(() => {
     // 用户取消删除
   })

@@ -511,7 +511,7 @@ const handleSubmit = async () => {
   await orderApi.create(form)
   ElMessage.success('创建成功')
   dialogVisible.value = false
-  loadData()
+  await loadData()
 }
 
 const handleView = async (row) => {
@@ -542,7 +542,7 @@ const handleDelete = (row) => {
   }).then(async () => {
     await orderApi.delete(row.id)
     ElMessage.success('删除成功')
-    loadData()
+    await loadData()
   })
 }
 

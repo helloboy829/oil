@@ -322,14 +322,19 @@ const handleSubmit = async () => {
     return
   }
 
-  if (form.id) {
-    await customerApi.update(form)
-  } else {
-    await customerApi.add(form)
+  try {
+    if (form.id) {
+      await customerApi.update(form)
+    } else {
+      await customerApi.add(form)
+    }
+    ElMessage.success('操作成功')
+    dialogVisible.value = false
+    // 等待数据加载完成
+    await loadData()
+  } catch (error) {
+    ElMessage.error('操作失败：' + (error.response?.data?.message || error.message || '未知错误'))
   }
-  ElMessage.success('操作成功')
-  dialogVisible.value = false
-  loadData()
 }
 
 const handleDelete = (row) => {
@@ -338,9 +343,14 @@ const handleDelete = (row) => {
     cancelButtonText: '取消',
     type: 'warning'
   }).then(async () => {
-    await customerApi.delete(row.id)
-    ElMessage.success('删除成功')
-    loadData()
+    try {
+      await customerApi.delete(row.id)
+      ElMessage.success('删除成功')
+      // 等待数据加载完成
+      await loadData()
+    } catch (error) {
+      ElMessage.error('删除失败：' + (error.response?.data?.message || error.message || '未知错误'))
+    }
   })
 }
 

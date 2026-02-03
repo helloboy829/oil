@@ -308,14 +308,21 @@ const handleSubmit = async () => {
     return
   }
 
-  if (form.id) {
-    await productApi.update(form)
-  } else {
-    await productApi.add(form)
+  try {
+    if (form.id) {
+      await productApi.update(form)
+    } else {
+      await productApi.add(form)
+    }
+    ElMessage.success('操作成功')
+    dialogVisible.value = false
+    // 等待数据加载完成后再关闭对话框
+    await loadData()
+    // 清空缓存，强制重新加载
+    allProductNames.value = []
+  } catch (error) {
+    ElMessage.error('操作失败：' + (error.response?.data?.message || error.message || '未知错误'))
   }
-  ElMessage.success('操作成功')
-  dialogVisible.value = false
-  loadData()
 }
 
 const handleDelete = (row) => {
@@ -324,9 +331,16 @@ const handleDelete = (row) => {
     cancelButtonText: '取消',
     type: 'warning'
   }).then(async () => {
-    await productApi.delete(row.id)
-    ElMessage.success('删除成功')
-    loadData()
+    try {
+      await productApi.delete(row.id)
+      ElMessage.success('删除成功')
+      // 等待数据加载完成
+      await loadData()
+      // 清空缓存，强制重新加载
+      allProductNames.value = []
+    } catch (error) {
+      ElMessage.error('删除失败：' + (error.response?.data?.message || error.message || '未知错误'))
+    }
   })
 }
 
@@ -337,14 +351,23 @@ const handleRowClick = (row) => {
 
 // 生成二维码
 const handleGenerateQrCode = async (row) => {
+  // 检查商品编码是否存在
+  if (!row.code || row.code.trim() === '') {
+    ElMessage.warning('商品编码为空，无法生成二维码。请先编辑商品添加编码。')
+    return
+  }
+
   try {
+    qrCodeLoading.value = true
     const res = await axios.post(`/api/product/qrcode/${row.id}`)
     if (res.data.code === 200) {
       ElMessage.success('二维码生成成功！')
-      loadData()
+      await loadData()
     }
   } catch (error) {
-    ElMessage.error('二维码生成失败')
+    ElMessage.error('二维码生成失败：' + (error.response?.data?.message || error.message || '未知错误'))
+  } finally {
+    qrCodeLoading.value = false
   }
 }
 

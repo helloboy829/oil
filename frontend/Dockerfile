@@ -26,8 +26,9 @@ COPY --from=build /build/dist .
 # 创建SSL证书目录
 RUN mkdir -p /etc/nginx/ssl
 
-# 生成自签名SSL证书（用于开发/测试）
-RUN apk add --no-cache openssl && \
+# 配置Alpine镜像源为国内镜像（加速访问）并生成自签名SSL证书
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
+    apk add --no-cache openssl && \
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout /etc/nginx/ssl/nginx-selfsigned.key \
     -out /etc/nginx/ssl/nginx-selfsigned.crt \

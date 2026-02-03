@@ -698,6 +698,12 @@ const submitOrder = async () => {
     return
   }
 
+  // 验证客户是否存在
+  if (!selectedCustomer.value || !selectedCustomer.value.id) {
+    ElMessage.error('请从下拉列表中选择已存在的客户')
+    return
+  }
+
   submitting.value = true
 
   try {
@@ -708,7 +714,7 @@ const submitOrder = async () => {
     }))
 
     await orderApi.create({
-      customerId: selectedCustomer.value?.id,
+      customerId: selectedCustomer.value.id,
       customerName: orderForm.value.customerName,
       paymentType: orderForm.value.paymentType,
       remark: orderForm.value.remark,
@@ -726,6 +732,7 @@ const submitOrder = async () => {
       remark: ''
     }
     isMonthlyCustomer.value = false
+    selectedCustomer.value = null
 
   } catch (err) {
     ElMessage.error('订单创建失败：' + (err.response?.data?.message || err.message || '未知错误'))

@@ -12,7 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -33,9 +35,11 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
         }
 
         // 查询该月的所有订单（不限制支付方式，支持所有客户）
-        // 解析账单月份，例如 "2026-02" -> 2026年2月1日 00:00:00 到 2026年2月29日 23:59:59
+        // 解析账单月份，例如 "2026-02" -> 2026年2月1日 00:00:00 到 2026年2月28日 23:59:59
+        YearMonth yearMonth = YearMonth.parse(billMonth);
+        int lastDay = yearMonth.lengthOfMonth(); // 获取该月的实际天数
         String startTime = billMonth + "-01 00:00:00";
-        String endTime = billMonth + "-31 23:59:59"; // 使用31天覆盖所有月份
+        String endTime = billMonth + "-" + String.format("%02d", lastDay) + " 23:59:59";
 
         LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Orders::getCustomerId, customerId)
@@ -71,10 +75,12 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
         }
 
         // 查询账单对应的订单明细
-        // 解析账单月份，例如 "2026-02" -> 2026年2月1日 00:00:00 到 2026年2月29日 23:59:59
+        // 解析账单月份，例如 "2026-02" -> 2026年2月1日 00:00:00 到 2026年2月28日 23:59:59
         String billMonth = bill.getBillMonth(); // 格式: YYYY-MM
+        YearMonth yearMonth = YearMonth.parse(billMonth);
+        int lastDay = yearMonth.lengthOfMonth(); // 获取该月的实际天数
         String startTime = billMonth + "-01 00:00:00";
-        String endTime = billMonth + "-31 23:59:59"; // 使用31天覆盖所有月份
+        String endTime = billMonth + "-" + String.format("%02d", lastDay) + " 23:59:59";
 
         LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Orders::getCustomerId, bill.getCustomerId())

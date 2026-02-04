@@ -24,10 +24,14 @@ public class OrderController {
     @GetMapping("/page")
     public Result<Page<Orders>> page(@RequestParam(defaultValue = "1") Integer current,
                                       @RequestParam(defaultValue = "10") Integer size,
-                                      @RequestParam(required = false) String orderNo) {
+                                      @RequestParam(required = false) String orderNo,
+                                      @RequestParam(required = false) String customerName) {
         LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
         if (orderNo != null && !orderNo.isEmpty()) {
             wrapper.like(Orders::getOrderNo, orderNo);
+        }
+        if (customerName != null && !customerName.isEmpty()) {
+            wrapper.like(Orders::getCustomerName, customerName);
         }
         wrapper.orderByDesc(Orders::getCreateTime);
         Page<Orders> page = orderService.page(new Page<>(current, size), wrapper);

@@ -7,7 +7,14 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(ssh root@120.79.211.158 \"cd /oil && git pull origin main\")",
-      "Bash(ssh root@120.79.211.158 \"cd /oil && docker-compose build frontend\")"
+      "Bash(ssh root@120.79.211.158 \"cd /oil && docker-compose build frontend\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@120.79.211.158 \"cd /oil && git status\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@120.79.211.158 \"docker ps --format ''table {{.Names}}\\\\t{{.Status}}\\\\t{{.Image}}''\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@120.79.211.158 \"docker images | grep oil\")",
+      "Bash(ssh:*)",
+      "Bash(git pull:*)",
+      "Bash(grep:*)",
+      "Bash(git add:*)"
     ]
   }
 }

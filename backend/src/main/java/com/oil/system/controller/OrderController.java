@@ -26,6 +26,12 @@ public class OrderController {
                                       @RequestParam(defaultValue = "10") Integer size,
                                       @RequestParam(required = false) String orderNo,
                                       @RequestParam(required = false) String customerName) {
+        // 添加日志输出
+        System.out.println("========== 订单查询参数 ==========");
+        System.out.println("orderNo: [" + orderNo + "]");
+        System.out.println("customerName: [" + customerName + "]");
+        System.out.println("================================");
+
         LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
         if (orderNo != null && !orderNo.isEmpty()) {
             wrapper.like(Orders::getOrderNo, orderNo);

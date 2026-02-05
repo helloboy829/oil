@@ -7,10 +7,7 @@
           <el-select
             v-model="searchForm.orderNo"
             filterable
-            remote
-            reserve-keyword
-            placeholder="请输入订单编号搜索"
-            :remote-method="searchOrderNo"
+            placeholder="请选择或输入订单编号"
             :loading="orderNoLoading"
             clearable
             style="width: 200px;"
@@ -28,10 +25,7 @@
           <el-select
             v-model="searchForm.customerName"
             filterable
-            remote
-            reserve-keyword
-            placeholder="请输入客户姓名搜索"
-            :remote-method="searchCustomerName"
+            placeholder="请选择或输入客户姓名"
             :loading="customerNameLoading"
             clearable
             style="width: 200px;"

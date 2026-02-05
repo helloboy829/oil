@@ -26,19 +26,18 @@ public class OrderController {
                                       @RequestParam(defaultValue = "10") Integer size,
                                       @RequestParam(required = false) String orderNo,
                                       @RequestParam(required = false) String customerName) {
-        // 添加日志输出
-        System.out.println("========== 订单查询参数 ==========");
-        System.out.println("orderNo: [" + orderNo + "]");
-        System.out.println("customerName: [" + customerName + "]");
-        System.out.println("================================");
-
         LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
-        if (orderNo != null && !orderNo.isEmpty()) {
-            wrapper.like(Orders::getOrderNo, orderNo);
+
+        // 订单编号查询：去除首尾空格后进行模糊匹配
+        if (orderNo != null && !orderNo.trim().isEmpty()) {
+            wrapper.like(Orders::getOrderNo, orderNo.trim());
         }
-        if (customerName != null && !customerName.isEmpty()) {
-            wrapper.like(Orders::getCustomerName, customerName);
+
+        // 客户名称查询：去除首尾空格后进行模糊匹配
+        if (customerName != null && !customerName.trim().isEmpty()) {
+            wrapper.like(Orders::getCustomerName, customerName.trim());
         }
+
         wrapper.orderByDesc(Orders::getCreateTime);
         Page<Orders> page = orderService.page(new Page<>(current, size), wrapper);
         return Result.success(page);

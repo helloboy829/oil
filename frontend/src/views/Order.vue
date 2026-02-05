@@ -368,12 +368,21 @@ const formattedTableData = computed(() => {
 })
 
 const loadData = async () => {
-  const res = await orderApi.getPage({
+  // 去除空格，确保参数正确传递
+  const params = {
     current: pagination.current,
-    size: pagination.size,
-    orderNo: searchForm.orderNo,
-    customerName: searchForm.customerName
-  })
+    size: pagination.size
+  }
+
+  // 只有非空值才添加到参数中
+  if (searchForm.orderNo && searchForm.orderNo.trim()) {
+    params.orderNo = searchForm.orderNo.trim()
+  }
+  if (searchForm.customerName && searchForm.customerName.trim()) {
+    params.customerName = searchForm.customerName.trim()
+  }
+
+  const res = await orderApi.getPage(params)
   tableData.value = res.data.records
   pagination.total = res.data.total
 }

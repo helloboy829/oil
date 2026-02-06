@@ -60,10 +60,7 @@ public class OrderServiceImpl extends ServiceImpl<OrdersMapper, Orders> implemen
         order.setCustomerId(orderDTO.getCustomerId());
         order.setCustomerName(orderDTO.getCustomerName());
         order.setPaymentType(orderDTO.getPaymentType());
-        // 月结订单标记为未结算,其他标记为已结算
-        order.setPaymentStatus("月结".equals(orderDTO.getPaymentType()) ? "未结算" : "已结算");
         order.setRemark(orderDTO.getRemark());
-        order.setOrderStatus("已完成");
         order.setTotalAmount(totalAmount);
 
         // 保存订单

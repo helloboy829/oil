@@ -22,11 +22,20 @@ public class CustomerController {
     @GetMapping("/page")
     public Result<Page<Customer>> page(@RequestParam(defaultValue = "1") Integer current,
                                         @RequestParam(defaultValue = "10") Integer size,
-                                        @RequestParam(required = false) String name) {
+                                        @RequestParam(required = false) String name,
+                                        @RequestParam(required = false) Integer isMonthly) {
         LambdaQueryWrapper<Customer> wrapper = new LambdaQueryWrapper<>();
+
+        // 客户姓名查询
         if (name != null && !name.isEmpty()) {
             wrapper.like(Customer::getName, name);
         }
+
+        // 月结客户查询
+        if (isMonthly != null) {
+            wrapper.eq(Customer::getIsMonthly, isMonthly);
+        }
+
         Page<Customer> page = customerService.page(new Page<>(current, size), wrapper);
         return Result.success(page);
     }

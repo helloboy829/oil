@@ -21,10 +21,6 @@ public class Orders {
 
     private String paymentType;
 
-    private String paymentStatus;
-
-    private String orderStatus;
-
     private String remark;
 
     private Long operatorId;

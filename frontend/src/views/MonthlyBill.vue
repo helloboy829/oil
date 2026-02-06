@@ -16,9 +16,6 @@
         <div v-for="item in formattedTableData" :key="item.id" class="bill-card">
           <div class="bill-card-header">
             <div class="bill-no">{{ item.billNo }}</div>
-            <el-tag :type="item.status === '已结清' ? 'success' : item.status === '部分支付' ? 'warning' : 'info'" size="small">
-              {{ item.status }}
-            </el-tag>
           </div>
 
           <div class="bill-card-body">
@@ -41,6 +38,18 @@
             <div class="bill-info-row">
               <span class="info-label">已支付:</span>
               <span class="paid-text">¥{{ item.paidAmount?.toFixed(2) || '0.00' }}</span>
+            </div>
+            <div class="bill-info-row">
+              <span class="info-label">结算状态:</span>
+              <el-button
+                v-if="item.status === '未结清'"
+                type="success"
+                size="small"
+                @click="handleSettle(item)"
+              >
+                结算
+              </el-button>
+              <el-tag v-else type="info" size="small">已结算</el-tag>
             </div>
           </div>
 
@@ -67,7 +76,19 @@
             <span>¥{{ row.paidAmount?.toFixed(2) || '0.00' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100" />
+        <el-table-column label="结算状态" width="120" align="center">
+          <template #default="{ row }">
+            <el-button
+              v-if="row.status === '未结清'"
+              type="success"
+              size="small"
+              @click="handleSettle(row)"
+            >
+              结算
+            </el-button>
+            <el-tag v-else type="info" size="small">已结算</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button type="success" size="small" @click="handleExport(row)">
@@ -210,6 +231,24 @@ const handleSubmit = async () => {
 
 const handleExport = (row) => {
   window.open(monthlyBillApi.export(row.id))
+}
+
+const handleSettle = async (row) => {
+  ElMessageBox.confirm('确定将此账单标记为已结清吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      await monthlyBillApi.settle(row.id)
+      ElMessage.success('结算成功')
+      await loadData()
+    } catch (error) {
+      ElMessage.error('结算失败：' + (error.response?.data?.message || error.message || '未知错误'))
+    }
+  }).catch(() => {
+    // 用户取消结算
+  })
 }
 
 const handleDelete = (row) => {

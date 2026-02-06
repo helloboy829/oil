@@ -41,6 +41,15 @@ public class MonthlyBillController {
     }
 
     /**
+     * 结算月结账单
+     */
+    @PutMapping("/settle/{id}")
+    public Result<Void> settle(@PathVariable Long id) {
+        monthlyBillService.settle(id);
+        return Result.success();
+    }
+
+    /**
      * 导出月结账单
      */
     @GetMapping("/export/{id}")

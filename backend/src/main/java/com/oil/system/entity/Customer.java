@@ -2,7 +2,6 @@ package com.oil.system.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -15,15 +14,9 @@ public class Customer {
 
     private String phone;
 
-    private String company;
-
     private String address;
 
     private Integer isMonthly;
-
-    private BigDecimal creditLimit;
-
-    private BigDecimal balance;
 
     private String remark;
 

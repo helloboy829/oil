@@ -64,20 +64,6 @@
               <span class="info-label">联系电话:</span>
               <span class="info-value">{{ item.phone || '-' }}</span>
             </div>
-            <div class="customer-info-row">
-              <span class="info-label">公司名称:</span>
-              <span class="info-value">{{ item.company || '-' }}</span>
-            </div>
-            <div v-if="item.isMonthly" class="customer-info-row">
-              <span class="info-label">信用额度:</span>
-              <span class="credit-text">¥{{ item.creditLimit?.toFixed(2) || '0.00' }}</span>
-            </div>
-            <div v-if="item.isMonthly" class="customer-info-row">
-              <span class="info-label">当前欠款:</span>
-              <span class="balance-text" :class="{ 'has-balance': item.balance > 0 }">
-                ¥{{ item.balance?.toFixed(2) || '0.00' }}
-              </span>
-            </div>
           </div>
 
           <div class="customer-card-actions">
@@ -92,26 +78,11 @@
         <el-table-column prop="id" label="ID" width="80" align="center" />
         <el-table-column prop="name" label="客户姓名" min-width="120" show-overflow-tooltip />
         <el-table-column prop="phone" label="联系电话" min-width="130" />
-        <el-table-column prop="company" label="公司名称" min-width="180" show-overflow-tooltip />
         <el-table-column label="是否月结" width="100" align="center">
           <template #default="{ row }">
             <el-tag :type="row.isMonthly ? 'success' : 'info'" size="small">
               {{ row.isMonthly ? '月结' : '普通' }}
             </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="creditLimit" label="信用额度" width="120" align="right">
-          <template #default="{ row }">
-            <span v-if="row.isMonthly" class="credit-text">¥{{ row.creditLimit?.toFixed(2) || '0.00' }}</span>
-            <span v-else class="na-text">-</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="balance" label="当前欠款" width="120" align="right">
-          <template #default="{ row }">
-            <span v-if="row.isMonthly" class="balance-text" :class="{ 'has-balance': row.balance > 0 }">
-              ¥{{ row.balance?.toFixed(2) || '0.00' }}
-            </span>
-            <span v-else class="na-text">-</span>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="180" fixed="right" align="center">
@@ -149,10 +120,6 @@
           <el-input v-model="form.phone" placeholder="请输入联系电话" />
         </el-form-item>
 
-        <el-form-item label="公司名称">
-          <el-input v-model="form.company" placeholder="请输入公司名称" />
-        </el-form-item>
-
         <el-form-item label="地址">
           <el-input v-model="form.address" type="textarea" :rows="2" placeholder="请输入地址" />
         </el-form-item>
@@ -169,17 +136,6 @@
             active-text="是"
             inactive-text="否"
           />
-        </el-form-item>
-
-        <el-form-item label="信用额度" v-if="form.isMonthly">
-          <el-input-number
-            v-model="form.creditLimit"
-            :precision="2"
-            :min="0"
-            :step="100"
-            style="width: 100%;"
-          />
-          <div class="form-tip">月结客户可赊账的最大金额</div>
         </el-form-item>
 
         <el-form-item label="备注">
@@ -229,11 +185,8 @@ const form = reactive({
   id: null,
   name: '',
   phone: '',
-  company: '',
   address: '',
   isMonthly: 0,
-  creditLimit: 0,
-  balance: 0,
   remark: ''
 })
 
@@ -295,11 +248,8 @@ const handleAdd = () => {
     id: null,
     name: '',
     phone: '',
-    company: '',
     address: '',
     isMonthly: 0,
-    creditLimit: 0,
-    balance: 0,
     remark: ''
   })
   dialogVisible.value = true

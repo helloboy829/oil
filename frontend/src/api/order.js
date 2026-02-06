@@ -30,6 +30,10 @@ export const monthlyBillApi = {
   generate(params) {
     return request.post('/monthly-bill/generate', null, { params })
   },
+  // 结算月结账单
+  settle(id) {
+    return request.put(`/monthly-bill/settle/${id}`)
+  },
   // 导出月结账单
   export(id) {
     return `/api/monthly-bill/export/${id}`

@@ -63,9 +63,6 @@
         <div v-for="item in formattedTableData" :key="item.id" class="order-card">
           <div class="order-card-header">
             <div class="order-no">{{ item.orderNo }}</div>
-            <el-tag :type="item.paymentStatus === '已结算' ? 'success' : 'warning'" size="small">
-              {{ item.paymentStatus }}
-            </el-tag>
           </div>
 
           <div class="order-card-body">
@@ -78,10 +75,6 @@
               <el-tag :type="getPaymentTypeTag(item.paymentType)" size="small">
                 {{ item.paymentType }}
               </el-tag>
-            </div>
-            <div class="order-info-row">
-              <span class="info-label">订单状态:</span>
-              <el-tag type="success" size="small">{{ item.orderStatus }}</el-tag>
             </div>
             <div class="order-info-row">
               <span class="info-label">创建时间:</span>
@@ -113,20 +106,6 @@
           <template #default="{ row }">
             <el-tag :type="getPaymentTypeTag(row.paymentType)" size="small">
               {{ row.paymentType }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="paymentStatus" label="结算状态" width="120" align="center">
-          <template #default="{ row }">
-            <el-tag :type="row.paymentStatus === '已结算' ? 'success' : 'warning'" size="small">
-              {{ row.paymentStatus }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="orderStatus" label="订单状态" width="120" align="center">
-          <template #default="{ row }">
-            <el-tag type="success" size="small">
-              {{ row.orderStatus }}
             </el-tag>
           </template>
         </el-table-column>
@@ -237,16 +216,6 @@
               <el-tag :type="getPaymentTypeTag(currentOrder.order?.paymentType)" size="small">
                 {{ currentOrder.order?.paymentType }}
               </el-tag>
-            </div>
-            <div class="info-item">
-              <span class="label">结算状态:</span>
-              <el-tag :type="currentOrder.order?.paymentStatus === '已结算' ? 'success' : 'warning'" size="small">
-                {{ currentOrder.order?.paymentStatus }}
-              </el-tag>
-            </div>
-            <div class="info-item">
-              <span class="label">订单状态:</span>
-              <el-tag type="success" size="small">{{ currentOrder.order?.orderStatus }}</el-tag>
             </div>
             <div class="info-item">
               <span class="label">创建时间:</span>

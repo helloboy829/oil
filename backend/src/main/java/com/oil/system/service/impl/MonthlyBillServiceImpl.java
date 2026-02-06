@@ -61,10 +61,28 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
         bill.setTotalAmount(totalAmount);
         bill.setPaidAmount(BigDecimal.ZERO);
         // 根据客户类型设置状态：月结客户为"未结算"，其他客户为"已结算"
-        bill.setStatus(customer.getIsMonthly() == 1 ? "未结算" : "已结算");
+        bill.setStatus(customer.getIsMonthly() == 1 ? "未结清" : "已结清");
         save(bill);
 
         return bill;
+    }
+
+    @Override
+    @Transactional
+    public void settle(Long billId) {
+        MonthlyBill bill = getById(billId);
+        if (bill == null) {
+            throw new RuntimeException("账单不存在");
+        }
+        if ("已结清".equals(bill.getStatus())) {
+            throw new RuntimeException("账单已结清，无需重复操作");
+        }
+
+        // 更新账单状态为已结清
+        bill.setStatus("已结清");
+        bill.setPaidAmount(bill.getTotalAmount());
+        bill.setSettlementDate(LocalDate.now());
+        updateById(bill);
     }
 
     @Override

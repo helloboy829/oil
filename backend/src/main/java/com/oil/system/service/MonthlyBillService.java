@@ -12,6 +12,11 @@ public interface MonthlyBillService extends IService<MonthlyBill> {
     MonthlyBill generateMonthlyBill(Long customerId, String billMonth);
 
     /**
+     * 结算月结账单
+     */
+    void settle(Long billId);
+
+    /**
      * 导出月结账单为Excel
      */
     void exportToExcel(Long billId, HttpServletResponse response);

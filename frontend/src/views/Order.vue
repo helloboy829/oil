@@ -95,9 +95,9 @@
 
       <!-- PC端表格视图 -->
       <el-table :data="formattedTableData" class="modern-table desktop-table-view">
-        <el-table-column prop="orderNo" label="订单编号" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="customerName" label="客户姓名" min-width="120" />
-        <el-table-column prop="totalAmount" label="订单金额" width="140" align="right">
+        <el-table-column prop="orderNo" label="订单编号" width="200" show-overflow-tooltip />
+        <el-table-column prop="customerName" label="客户姓名" width="150" />
+        <el-table-column prop="totalAmount" label="订单金额" width="150" align="right">
           <template #default="{ row }">
             <span class="amount-text">¥{{ row.totalAmount?.toFixed(2) || '0.00' }}</span>
           </template>
@@ -110,7 +110,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180" align="center" />
-        <el-table-column label="操作" width="150" fixed="right" align="center">
+        <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">
               <el-button type="primary" size="small" @click="handleView(row)" icon="View">详情</el-button>

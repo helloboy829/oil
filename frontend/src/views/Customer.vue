@@ -76,16 +76,17 @@
       <!-- PC端表格视图 -->
       <el-table :data="tableData" class="modern-table desktop-table-view">
         <el-table-column prop="id" label="ID" width="80" align="center" />
-        <el-table-column prop="name" label="客户姓名" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="phone" label="联系电话" min-width="130" />
-        <el-table-column label="是否月结" width="100" align="center">
+        <el-table-column prop="name" label="客户姓名" width="180" show-overflow-tooltip />
+        <el-table-column prop="phone" label="联系电话" width="160" />
+        <el-table-column prop="address" label="地址" min-width="250" show-overflow-tooltip />
+        <el-table-column label="是否月结" width="120" align="center">
           <template #default="{ row }">
             <el-tag :type="row.isMonthly ? 'success' : 'info'" size="small">
               {{ row.isMonthly ? '月结' : '普通' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="180" fixed="right" align="center">
+        <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">
               <el-button type="primary" size="small" @click="handleEdit(row)" icon="Edit">编辑</el-button>

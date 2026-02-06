@@ -43,21 +43,21 @@
               <span class="info-label">结算状态:</span>
               <el-button
                 v-if="item.status === '未结清'"
-                type="success"
-                size="small"
-                @click="handleSettle(item)"
-                plain
-              >
-                点击结算
-              </el-button>
-              <el-button
-                v-else
                 type="warning"
                 size="small"
                 @click="handleSettle(item)"
                 plain
               >
-                取消结算
+                未结算
+              </el-button>
+              <el-button
+                v-else
+                type="success"
+                size="small"
+                @click="handleSettle(item)"
+                plain
+              >
+                已结算
               </el-button>
             </div>
           </div>
@@ -71,48 +71,48 @@
 
       <!-- PC端表格视图 -->
       <el-table :data="formattedTableData" border stripe class="desktop-table-view">
-        <el-table-column prop="billNo" label="账单编号" width="180" />
-        <el-table-column prop="customerName" label="客户姓名" />
+        <el-table-column prop="billNo" label="账单编号" width="200" />
+        <el-table-column prop="customerName" label="客户姓名" width="150" />
         <el-table-column prop="billMonth" label="账单月份" width="120" />
-        <el-table-column prop="createTime" label="生成时间" width="160" />
-        <el-table-column prop="totalAmount" label="账单金额" width="120">
+        <el-table-column prop="createTime" label="生成时间" width="180" />
+        <el-table-column prop="totalAmount" label="账单金额" width="130">
           <template #default="{ row }">
-            <span>¥{{ row.totalAmount?.toFixed(2) || '0.00' }}</span>
+            <span style="color: #409eff; font-weight: 600;">¥{{ row.totalAmount?.toFixed(2) || '0.00' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="paidAmount" label="已支付" width="120">
+        <el-table-column prop="paidAmount" label="已支付" width="130">
           <template #default="{ row }">
-            <span>¥{{ row.paidAmount?.toFixed(2) || '0.00' }}</span>
+            <span style="color: #67c23a; font-weight: 600;">¥{{ row.paidAmount?.toFixed(2) || '0.00' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="结算状态" width="140" align="center">
+        <el-table-column label="结算状态" width="100" align="center">
           <template #default="{ row }">
             <el-button
               v-if="row.status === '未结清'"
-              type="success"
-              size="small"
-              @click="handleSettle(row)"
-              plain
-            >
-              点击结算
-            </el-button>
-            <el-button
-              v-else
               type="warning"
               size="small"
               @click="handleSettle(row)"
               plain
             >
-              取消结算
+              未结算
+            </el-button>
+            <el-button
+              v-else
+              type="success"
+              size="small"
+              @click="handleSettle(row)"
+              plain
+            >
+              已结算
             </el-button>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="220" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button type="success" size="small" @click="handleExport(row)">
-              导出Excel
+            <el-button type="success" size="small" @click="handleExport(row)" icon="Download">
+              导出
             </el-button>
-            <el-button type="danger" size="small" @click="handleDelete(row)">
+            <el-button type="danger" size="small" @click="handleDelete(row)" icon="Delete">
               删除
             </el-button>
           </template>

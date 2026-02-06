@@ -46,10 +46,19 @@
                 type="success"
                 size="small"
                 @click="handleSettle(item)"
+                plain
               >
-                结算
+                点击结算
               </el-button>
-              <el-tag v-else type="info" size="small">已结算</el-tag>
+              <el-button
+                v-else
+                type="warning"
+                size="small"
+                @click="handleSettle(item)"
+                plain
+              >
+                取消结算
+              </el-button>
             </div>
           </div>
 
@@ -76,17 +85,26 @@
             <span>¥{{ row.paidAmount?.toFixed(2) || '0.00' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="结算状态" width="120" align="center">
+        <el-table-column label="结算状态" width="140" align="center">
           <template #default="{ row }">
             <el-button
               v-if="row.status === '未结清'"
               type="success"
               size="small"
               @click="handleSettle(row)"
+              plain
             >
-              结算
+              点击结算
             </el-button>
-            <el-tag v-else type="info" size="small">已结算</el-tag>
+            <el-button
+              v-else
+              type="warning"
+              size="small"
+              @click="handleSettle(row)"
+              plain
+            >
+              取消结算
+            </el-button>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
@@ -234,21 +252,25 @@ const handleExport = (row) => {
 }
 
 const handleSettle = async (row) => {
-  ElMessageBox.confirm('确定将此账单标记为已结清吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(async () => {
-    try {
-      await monthlyBillApi.settle(row.id)
-      ElMessage.success('结算成功')
-      await loadData()
-    } catch (error) {
-      ElMessage.error('结算失败：' + (error.response?.data?.message || error.message || '未知错误'))
+  const isSettled = row.status === '已结清'
+  const confirmText = isSettled ? '确定取消结算此账单吗？' : '确定将此账单标记为已结清吗？'
+  const actionText = isSettled ? '取消结算' : '结算'
+
+  try {
+    await ElMessageBox.confirm(confirmText, '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+
+    await monthlyBillApi.settle(row.id)
+    ElMessage.success(`${actionText}成功`)
+    await loadData()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(`${actionText}失败：` + (error.response?.data?.message || error.message || '未知错误'))
     }
-  }).catch(() => {
-    // 用户取消结算
-  })
+  }
 }
 
 const handleDelete = (row) => {
@@ -383,6 +405,33 @@ onMounted(() => {
 
 .bill-card-actions .el-button {
   flex: 1;
+}
+
+/* 结算状态按钮样式 */
+.el-button.is-plain {
+  font-weight: 500;
+}
+
+.el-button--success.is-plain {
+  border-color: var(--el-color-success);
+  color: var(--el-color-success);
+}
+
+.el-button--success.is-plain:hover {
+  background-color: var(--el-color-success);
+  border-color: var(--el-color-success);
+  color: white;
+}
+
+.el-button--warning.is-plain {
+  border-color: var(--el-color-warning);
+  color: var(--el-color-warning);
+}
+
+.el-button--warning.is-plain:hover {
+  background-color: var(--el-color-warning);
+  border-color: var(--el-color-warning);
+  color: white;
 }
 
 /* 移动端响应式 */

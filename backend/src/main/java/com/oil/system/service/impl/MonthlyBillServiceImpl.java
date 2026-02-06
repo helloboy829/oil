@@ -74,14 +74,19 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
         if (bill == null) {
             throw new RuntimeException("账单不存在");
         }
-        if ("已结清".equals(bill.getStatus())) {
-            throw new RuntimeException("账单已结清，无需重复操作");
-        }
 
-        // 更新账单状态为已结清
-        bill.setStatus("已结清");
-        bill.setPaidAmount(bill.getTotalAmount());
-        bill.setSettlementDate(LocalDate.now());
+        // 切换结算状态
+        if ("已结清".equals(bill.getStatus())) {
+            // 已结清 -> 未结清
+            bill.setStatus("未结清");
+            bill.setPaidAmount(BigDecimal.ZERO);
+            bill.setSettlementDate(null);
+        } else {
+            // 未结清 -> 已结清
+            bill.setStatus("已结清");
+            bill.setPaidAmount(bill.getTotalAmount());
+            bill.setSettlementDate(LocalDate.now());
+        }
         updateById(bill);
     }
 

@@ -33,9 +33,9 @@ public class OrderController {
             wrapper.like(Orders::getOrderNo, orderNo.trim());
         }
 
-        // 客户名称查询：去除首尾空格后进行模糊匹配
+        // 客户名称查询：去除首尾空格后进行精确匹配
         if (customerName != null && !customerName.trim().isEmpty()) {
-            wrapper.like(Orders::getCustomerName, customerName.trim());
+            wrapper.eq(Orders::getCustomerName, customerName.trim());
         }
 
         wrapper.orderByDesc(Orders::getCreateTime);

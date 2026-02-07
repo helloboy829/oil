@@ -36,6 +36,9 @@ public class CustomerController {
             wrapper.eq(Customer::getIsMonthly, isMonthly);
         }
 
+        // 按创建时间倒序排列，新增的客户显示在最前面
+        wrapper.orderByDesc(Customer::getCreateTime);
+
         Page<Customer> page = customerService.page(new Page<>(current, size), wrapper);
         return Result.success(page);
     }

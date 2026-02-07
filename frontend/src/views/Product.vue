@@ -239,7 +239,8 @@ const loadData = async () => {
   const res = await productApi.getPage({
     current: pagination.current,
     size: pagination.size,
-    name: searchForm.name
+    name: searchForm.name,
+    _t: Date.now() // 添加时间戳避免缓存
   })
   tableData.value = res.data.records
   pagination.total = res.data.total
@@ -315,11 +316,14 @@ const handleSubmit = async () => {
       await productApi.add(form)
     }
     ElMessage.success('操作成功')
-    dialogVisible.value = false
-    // 等待数据加载完成后再关闭对话框
-    await loadData()
     // 清空缓存，强制重新加载
     allProductNames.value = []
+    // 先关闭对话框
+    dialogVisible.value = false
+    // 延迟一下确保数据已保存，然后刷新列表
+    setTimeout(async () => {
+      await loadData()
+    }, 100)
   } catch (error) {
     ElMessage.error('操作失败：' + (error.response?.data?.message || error.message || '未知错误'))
   }
@@ -334,10 +338,12 @@ const handleDelete = (row) => {
     try {
       await productApi.delete(row.id)
       ElMessage.success('删除成功')
-      // 等待数据加载完成
-      await loadData()
       // 清空缓存，强制重新加载
       allProductNames.value = []
+      // 延迟一下确保数据已删除，然后刷新列表
+      setTimeout(async () => {
+        await loadData()
+      }, 100)
     } catch (error) {
       ElMessage.error('删除失败：' + (error.response?.data?.message || error.message || '未知错误'))
     }

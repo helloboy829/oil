@@ -348,7 +348,8 @@ const loadData = async () => {
   // 去除空格，确保参数正确传递
   const params = {
     current: pagination.current,
-    size: pagination.size
+    size: pagination.size,
+    _t: Date.now() // 添加时间戳避免缓存
   }
 
   // 只有非空值才添加到参数中
@@ -502,11 +503,15 @@ const handleSubmit = async () => {
 
   await orderApi.create(form)
   ElMessage.success('创建成功')
-  dialogVisible.value = false
-  await loadData()
   // 清空缓存，强制重新加载
   allOrderNos.value = []
   allCustomerNames.value = []
+  // 先关闭对话框
+  dialogVisible.value = false
+  // 延迟一下确保数据已保存，然后刷新列表
+  setTimeout(async () => {
+    await loadData()
+  }, 100)
 }
 
 const handleView = async (row) => {
@@ -537,10 +542,13 @@ const handleDelete = (row) => {
   }).then(async () => {
     await orderApi.delete(row.id)
     ElMessage.success('删除成功')
-    await loadData()
     // 清空缓存，强制重新加载
     allOrderNos.value = []
     allCustomerNames.value = []
+    // 延迟一下确保数据已删除，然后刷新列表
+    setTimeout(async () => {
+      await loadData()
+    }, 100)
   })
 }
 

@@ -72,20 +72,20 @@
       <!-- PC端表格视图 -->
       <el-table :data="formattedTableData" border stripe class="desktop-table-view">
         <el-table-column prop="billNo" label="账单编号" width="200" />
-        <el-table-column prop="customerName" label="客户姓名" width="150" />
-        <el-table-column prop="billMonth" label="账单月份" width="120" />
-        <el-table-column prop="createTime" label="生成时间" width="180" />
-        <el-table-column prop="totalAmount" label="账单金额" width="130">
+        <el-table-column prop="customerName" label="客户姓名" width="140" />
+        <el-table-column prop="billMonth" label="账单月份" width="110" />
+        <el-table-column prop="createTime" label="生成时间" width="170" />
+        <el-table-column prop="totalAmount" label="账单金额" width="120">
           <template #default="{ row }">
             <span style="color: #409eff; font-weight: 600;">¥{{ row.totalAmount?.toFixed(2) || '0.00' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="paidAmount" label="已支付" width="130">
+        <el-table-column prop="paidAmount" label="已支付" width="120">
           <template #default="{ row }">
             <span style="color: #67c23a; font-weight: 600;">¥{{ row.paidAmount?.toFixed(2) || '0.00' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="结算状态" width="100" align="center">
+        <el-table-column label="结算状态" width="120" align="center">
           <template #default="{ row }">
             <el-button
               v-if="row.status === '未结清'"
@@ -107,7 +107,7 @@
             </el-button>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="220" fixed="right" align="center">
+        <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="{ row }">
             <el-button type="success" size="small" @click="handleExport(row)" icon="Download">
               导出

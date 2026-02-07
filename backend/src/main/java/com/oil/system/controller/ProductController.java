@@ -27,6 +27,8 @@ public class ProductController {
         if (name != null && !name.isEmpty()) {
             wrapper.like(Product::getName, name);
         }
+        // 按创建时间倒序排列，新增的商品显示在最前面
+        wrapper.orderByDesc(Product::getCreateTime);
         Page<Product> page = productService.page(new Page<>(current, size), wrapper);
         return Result.success(page);
     }

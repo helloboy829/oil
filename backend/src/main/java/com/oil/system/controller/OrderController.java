@@ -25,7 +25,9 @@ public class OrderController {
     public Result<Page<Orders>> page(@RequestParam(defaultValue = "1") Integer current,
                                       @RequestParam(defaultValue = "10") Integer size,
                                       @RequestParam(required = false) String orderNo,
-                                      @RequestParam(required = false) String customerName) {
+                                      @RequestParam(required = false) String customerName,
+                                      @RequestParam(required = false) String startDate,
+                                      @RequestParam(required = false) String endDate) {
         LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
 
         // 订单编号查询：去除首尾空格后进行模糊匹配
@@ -36,6 +38,14 @@ public class OrderController {
         // 客户名称查询：去除首尾空格后进行精确匹配
         if (customerName != null && !customerName.trim().isEmpty()) {
             wrapper.eq(Orders::getCustomerName, customerName.trim());
+        }
+
+        // 日期范围查询
+        if (startDate != null && !startDate.isEmpty()) {
+            wrapper.ge(Orders::getCreateTime, startDate + " 00:00:00");
+        }
+        if (endDate != null && !endDate.isEmpty()) {
+            wrapper.le(Orders::getCreateTime, endDate + " 23:59:59");
         }
 
         wrapper.orderByDesc(Orders::getCreateTime);

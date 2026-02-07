@@ -39,6 +39,19 @@
             />
           </el-select>
         </el-form-item>
+        <el-form-item label="创建时间">
+          <el-date-picker
+            v-model="searchForm.dateRange"
+            type="daterange"
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD"
+            clearable
+            style="width: 240px;"
+          />
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="loadData" icon="Search">查询</el-button>
           <el-button @click="handleReset" icon="Refresh">重置</el-button>
@@ -298,7 +311,8 @@ const formRules = {
 
 const searchForm = reactive({
   orderNo: '',
-  customerName: ''
+  customerName: '',
+  dateRange: null
 })
 
 // 搜索下拉列表
@@ -343,6 +357,11 @@ const loadData = async () => {
   }
   if (searchForm.customerName && searchForm.customerName.trim()) {
     params.customerName = searchForm.customerName.trim()
+  }
+  // 添加日期范围参数
+  if (searchForm.dateRange && searchForm.dateRange.length === 2) {
+    params.startDate = searchForm.dateRange[0]
+    params.endDate = searchForm.dateRange[1]
   }
 
   const res = await orderApi.getPage(params)
@@ -423,6 +442,7 @@ const searchCustomerName = async (query) => {
 const handleReset = () => {
   searchForm.orderNo = ''
   searchForm.customerName = ''
+  searchForm.dateRange = null
   loadData()
 }
 

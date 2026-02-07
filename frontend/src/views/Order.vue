@@ -484,6 +484,9 @@ const handleSubmit = async () => {
   ElMessage.success('创建成功')
   dialogVisible.value = false
   await loadData()
+  // 清空缓存，强制重新加载
+  allOrderNos.value = []
+  allCustomerNames.value = []
 }
 
 const handleView = async (row) => {
@@ -515,6 +518,9 @@ const handleDelete = (row) => {
     await orderApi.delete(row.id)
     ElMessage.success('删除成功')
     await loadData()
+    // 清空缓存，强制重新加载
+    allOrderNos.value = []
+    allCustomerNames.value = []
   })
 }
 

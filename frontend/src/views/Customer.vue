@@ -283,6 +283,8 @@ const handleSubmit = async () => {
     dialogVisible.value = false
     // 等待数据加载完成
     await loadData()
+    // 清空缓存，强制重新加载
+    allCustomerNames.value = []
   } catch (error) {
     ElMessage.error('操作失败：' + (error.response?.data?.message || error.message || '未知错误'))
   }
@@ -299,6 +301,8 @@ const handleDelete = (row) => {
       ElMessage.success('删除成功')
       // 等待数据加载完成
       await loadData()
+      // 清空缓存，强制重新加载
+      allCustomerNames.value = []
     } catch (error) {
       ElMessage.error('删除失败：' + (error.response?.data?.message || error.message || '未知错误'))
     }

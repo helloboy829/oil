@@ -100,9 +100,9 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="320" fixed="right" align="center">
+        <el-table-column label="操作" width="240" fixed="right" align="center">
           <template #default="{ row }">
-            <div class="action-buttons">
+            <div class="action-buttons-grid">
               <el-button type="primary" size="small" @click.stop="handleEdit(row)" icon="Edit">编辑</el-button>
               <el-button type="success" size="small" @click.stop="handleGenerateQrCode(row)" icon="PictureFilled">生成码</el-button>
               <el-button type="info" size="small" @click.stop="handleViewQrCode(row)" icon="View">查看码</el-button>
@@ -530,6 +530,19 @@ onMounted(() => {
 
 .action-buttons .el-button {
   margin: 0;
+}
+
+/* 操作按钮2x2网格布局 */
+.action-buttons-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.action-buttons-grid .el-button {
+  margin: 0;
+  width: 100%;
 }
 
 /* 分页容器 */

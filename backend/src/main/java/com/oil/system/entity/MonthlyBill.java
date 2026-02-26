@@ -30,6 +30,9 @@ public class MonthlyBill {
 
     private String remark;
 
+    // 生成账单时关联的订单ID列表，JSON格式，如 "[1,2,3]"
+    private String orderIds;
+
     @TableLogic
     private Integer deleted;
 

@@ -294,25 +294,55 @@ const handleSubmit = async () => {
   }
 }
 
-const handleDelete = (row) => {
-  ElMessageBox.confirm('确定删除该客户吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(async () => {
-    try {
-      await customerApi.delete(row.id)
-      ElMessage.success('删除成功')
-      // 清空缓存，强制重新加载
-      allCustomerNames.value = []
-      // 延迟一下确保数据已删除，然后刷新列表
-      setTimeout(async () => {
-        await loadData()
-      }, 100)
-    } catch (error) {
-      ElMessage.error('删除失败：' + (error.response?.data?.message || error.message || '未知错误'))
+const handleDelete = async (row) => {
+  try {
+    await ElMessageBox.confirm('确定删除该客户吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+  } catch {
+    return
+  }
+
+  try {
+    await customerApi.delete(row.id)
+    ElMessage.success('删除成功')
+    allCustomerNames.value = []
+    setTimeout(() => loadData(), 100)
+  } catch (error) {
+    const code = error.response?.data?.code
+    const msg = error.response?.data?.message || ''
+    if (code === 409) {
+      try {
+        await ElMessageBox.confirm(
+          msg + '，请选择处理方式：\n\n【全部删除】同时删除客户及其所有订单\n【保留数据】仅删除客户，订单数据保留（在订单列表中显示为灰色）',
+          '该客户下存在订单',
+          {
+            confirmButtonText: '全部删除',
+            cancelButtonText: '保留数据',
+            distinguishCancelAndClose: true,
+            type: 'warning'
+          }
+        )
+        // 全部删除
+        await customerApi.delete(row.id, { force: true })
+        ElMessage.success('已删除客户及其所有订单')
+        allCustomerNames.value = []
+        setTimeout(() => loadData(), 100)
+      } catch (action) {
+        if (action === 'cancel') {
+          // 保留数据，直接软删除客户（不传 force）
+          await customerApi.delete(row.id, { keep: true })
+          ElMessage.success('客户已删除，订单数据已保留')
+          allCustomerNames.value = []
+          setTimeout(() => loadData(), 100)
+        }
+      }
+    } else {
+      ElMessage.error('删除失败：' + (msg || error.message || '未知错误'))
     }
-  })
+  }
 }
 
 onMounted(() => {

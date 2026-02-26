@@ -42,8 +42,8 @@ export const customerApi = {
   update(data) {
     return request.put('/customer', data)
   },
-  // 删除客户
-  delete(id) {
-    return request.delete(`/customer/${id}`)
+  // 删除客户（force=true 同时删订单；keep=true 保留订单只删客户）
+  delete(id, { force = false, keep = false } = {}) {
+    return request.delete(`/customer/${id}`, { params: { force, keep } })
   }
 }

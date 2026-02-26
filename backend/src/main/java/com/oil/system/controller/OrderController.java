@@ -5,10 +5,15 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.oil.system.dto.OrderDTO;
 import com.oil.system.dto.Result;
 import com.oil.system.entity.Orders;
+import com.oil.system.mapper.CustomerMapper;
 import com.oil.system.service.OrderService;
 import com.oil.system.vo.OrderDetailVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/order")
@@ -17,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 public class OrderController {
 
     private final OrderService orderService;
+    private final CustomerMapper customerMapper;
 
     /**
      * 分页查询订单
@@ -30,26 +36,33 @@ public class OrderController {
                                       @RequestParam(required = false) String endDate) {
         LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
 
-        // 订单编号查询：去除首尾空格后进行模糊匹配
         if (orderNo != null && !orderNo.trim().isEmpty()) {
             wrapper.like(Orders::getOrderNo, orderNo.trim());
         }
-
-        // 客户名称查询：去除首尾空格后进行精确匹配
         if (customerName != null && !customerName.trim().isEmpty()) {
             wrapper.eq(Orders::getCustomerName, customerName.trim());
         }
-
-        // 日期范围查询
         if (startDate != null && !startDate.isEmpty()) {
             wrapper.ge(Orders::getCreateTime, startDate + " 00:00:00");
         }
         if (endDate != null && !endDate.isEmpty()) {
             wrapper.le(Orders::getCreateTime, endDate + " 23:59:59");
         }
-
         wrapper.orderByDesc(Orders::getCreateTime);
+
         Page<Orders> page = orderService.page(new Page<>(current, size), wrapper);
+
+        // 批量标记客户是否已被软删除
+        List<Orders> records = page.getRecords();
+        if (!records.isEmpty()) {
+            Set<Long> customerIds = records.stream()
+                    .map(Orders::getCustomerId)
+                    .filter(id -> id != null)
+                    .collect(Collectors.toSet());
+            Set<Long> deletedIds = new java.util.HashSet<>(customerMapper.selectDeletedIdsByIds(customerIds));
+            records.forEach(o -> o.setCustomerDeleted(deletedIds.contains(o.getCustomerId())));
+        }
+
         return Result.success(page);
     }
 

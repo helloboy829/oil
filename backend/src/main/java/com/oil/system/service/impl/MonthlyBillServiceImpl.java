@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -52,6 +53,11 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
                 .map(Orders::getTotalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // 记录关联的订单ID列表（JSON格式），防止后续订单变动导致账单数据不一致
+        String orderIds = "[" + orders.stream()
+                .map(o -> String.valueOf(o.getId()))
+                .collect(Collectors.joining(",")) + "]";
+
         // 创建账单
         MonthlyBill bill = new MonthlyBill();
         bill.setBillNo(generateBillNo());
@@ -60,6 +66,7 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
         bill.setBillMonth(billMonth);
         bill.setTotalAmount(totalAmount);
         bill.setPaidAmount(BigDecimal.ZERO);
+        bill.setOrderIds(orderIds);
         // 根据客户类型设置状态：月结客户为"未结算"，其他客户为"已结算"
         bill.setStatus(customer.getIsMonthly() == 1 ? "未结清" : "已结清");
         save(bill);
@@ -97,19 +104,30 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
             throw new RuntimeException("账单不存在");
         }
 
-        // 查询账单对应的订单明细
-        // 解析账单月份，例如 "2026-02" -> 2026年2月1日 00:00:00 到 2026年2月28日 23:59:59
-        String billMonth = bill.getBillMonth(); // 格式: YYYY-MM
-        YearMonth yearMonth = YearMonth.parse(billMonth);
-        int lastDay = yearMonth.lengthOfMonth(); // 获取该月的实际天数
-        String startTime = billMonth + "-01 00:00:00";
-        String endTime = billMonth + "-" + String.format("%02d", lastDay) + " 23:59:59";
-
-        LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Orders::getCustomerId, bill.getCustomerId())
-                .ge(Orders::getCreateTime, startTime)
-                .le(Orders::getCreateTime, endTime);
-        List<Orders> orders = orderService.list(wrapper);
+        // 查询账单对应的订单：优先按保存的orderIds查，兼容旧账单（无orderIds时按日期范围查）
+        List<Orders> orders;
+        if (bill.getOrderIds() != null && !bill.getOrderIds().equals("[]") && !bill.getOrderIds().isEmpty()) {
+            // 新逻辑：按生成账单时记录的订单ID精确查询，不受后续订单增删影响
+            String ids = bill.getOrderIds().replaceAll("[\\[\\]\\s]", "");
+            List<Long> idList = java.util.Arrays.stream(ids.split(","))
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+            LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
+            wrapper.in(Orders::getId, idList);
+            orders = orderService.list(wrapper);
+        } else {
+            // 兼容旧账单：按日期范围查询
+            String billMonth = bill.getBillMonth();
+            YearMonth yearMonth = YearMonth.parse(billMonth);
+            int lastDay = yearMonth.lengthOfMonth();
+            String startTime = billMonth + "-01 00:00:00";
+            String endTime = billMonth + "-" + String.format("%02d", lastDay) + " 23:59:59";
+            LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(Orders::getCustomerId, bill.getCustomerId())
+                    .ge(Orders::getCreateTime, startTime)
+                    .le(Orders::getCreateTime, endTime);
+            orders = orderService.list(wrapper);
+        }
 
         // 导出Excel
         ExcelUtil.exportMonthlyBill(bill, orders, orderItemService, response);

@@ -4,7 +4,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.oil.system.dto.Result;
 import com.oil.system.entity.Customer;
+import com.oil.system.entity.Orders;
 import com.oil.system.service.CustomerService;
+import com.oil.system.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class CustomerController {
 
     private final CustomerService customerService;
+    private final OrderService orderService;
 
     /**
      * 分页查询客户
@@ -73,10 +76,23 @@ public class CustomerController {
 
     /**
      * 删除客户
+     * force=true：同时删除客户及其所有订单
+     * keep=true：保留订单数据，仅软删除客户
+     * 默认：有订单时返回 409 让前端决策
      */
     @DeleteMapping("/{id}")
-    public Result<Void> delete(@PathVariable Long id) {
-        customerService.removeById(id);
+    public Result<?> delete(@PathVariable Long id,
+                            @RequestParam(defaultValue = "false") boolean force,
+                            @RequestParam(defaultValue = "false") boolean keep) {
+        if (!force && !keep) {
+            long orderCount = orderService.count(
+                    new LambdaQueryWrapper<Orders>().eq(Orders::getCustomerId, id)
+            );
+            if (orderCount > 0) {
+                return Result.error(409, "该客户下存在 " + orderCount + " 条订单");
+            }
+        }
+        customerService.deleteById(id, force);
         return Result.success();
     }
 }

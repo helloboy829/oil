@@ -27,6 +27,10 @@ public class Orders {
 
     private String operatorName;
 
+    // 非数据库字段，标记该订单关联的客户是否已被删除
+    @TableField(exist = false)
+    private Boolean customerDeleted;
+
     @TableLogic
     private Integer deleted;
 

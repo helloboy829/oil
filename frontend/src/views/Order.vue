@@ -73,7 +73,7 @@
 
       <!-- 移动端卡片视图 -->
       <div class="mobile-card-view">
-        <div v-for="item in formattedTableData" :key="item.id" class="order-card">
+        <div v-for="item in formattedTableData" :key="item.id" class="order-card" :class="{ 'order-card-deleted': item.customerDeleted }">
           <div class="order-card-header">
             <div class="order-no">{{ item.orderNo }}</div>
           </div>
@@ -107,7 +107,7 @@
       </div>
 
       <!-- PC端表格视图 -->
-      <el-table :data="formattedTableData" class="modern-table desktop-table-view">
+      <el-table :data="formattedTableData" class="modern-table desktop-table-view" :row-class-name="getRowClass">
         <el-table-column prop="orderNo" label="订单编号" min-width="180" show-overflow-tooltip />
         <el-table-column prop="customerName" label="客户姓名" min-width="120" />
         <el-table-column prop="totalAmount" label="订单金额" min-width="120" align="right">
@@ -552,6 +552,10 @@ const handleDelete = (row) => {
   })
 }
 
+const getRowClass = ({ row }) => {
+  return row.customerDeleted ? 'row-customer-deleted' : ''
+}
+
 const getPaymentTypeTag = (type) => {
   const map = {
     '现金': 'success',
@@ -646,6 +650,11 @@ onMounted(() => {
 .modern-table :deep(.el-table__row:hover) {
   background-color: var(--primary-light) !important;
   box-shadow: 0 2px 8px rgba(79, 70, 229, 0.1);
+}
+
+.modern-table :deep(.row-customer-deleted td) {
+  color: #aaa;
+  background-color: #f5f5f5;
 }
 
 .modern-table :deep(.el-table__body td) {
@@ -890,6 +899,11 @@ onMounted(() => {
 .order-card:hover {
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
+}
+
+.order-card-deleted {
+  opacity: 0.5;
+  background: #f5f5f5;
 }
 
 .order-card-header {

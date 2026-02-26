@@ -84,6 +84,7 @@ public class ExcelUtil {
             // 准备明细数据并计算汇总
             int totalQuantity = 0;
             int orderCount = orders.size();
+            BigDecimal actualTotalAmount = BigDecimal.ZERO;
 
             int serialNo = 1;
             for (Orders order : orders) {
@@ -107,14 +108,15 @@ public class ExcelUtil {
                     createCell(dataRow, 9, "¥" + item.getSubtotal().setScale(2, BigDecimal.ROUND_HALF_UP), dataStyle);
 
                     totalQuantity += item.getQuantity();
+                    actualTotalAmount = actualTotalAmount.add(item.getSubtotal());
                 }
             }
 
             // 空行
             rowNum++;
 
-            // 汇总信息
-            rowNum = createSummary(sheet, summaryStyle, bill, orderCount, totalQuantity, rowNum);
+            // 汇总信息（使用从明细重新计算的实际总金额，确保与明细一致）
+            rowNum = createSummary(sheet, summaryStyle, bill, orderCount, totalQuantity, actualTotalAmount, rowNum);
 
             // 写入响应流
             workbook.write(response.getOutputStream());
@@ -259,7 +261,7 @@ public class ExcelUtil {
      * 创建汇总信息
      */
     private static int createSummary(Sheet sheet, CellStyle summaryStyle, MonthlyBill bill,
-                                     int orderCount, int totalQuantity, int rowNum) {
+                                     int orderCount, int totalQuantity, BigDecimal actualTotalAmount, int rowNum) {
         // 订单总数
         Row row1 = sheet.createRow(rowNum++);
         row1.setHeight((short) 400);
@@ -274,11 +276,11 @@ public class ExcelUtil {
         cell2.setCellStyle(summaryStyle);
         sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 5, 9));
 
-        // 应付总额
+        // 应付总额（使用从明细重新计算的实际金额）
         Row row2 = sheet.createRow(rowNum++);
         row2.setHeight((short) 400);
         Cell cell3 = row2.createCell(0);
-        cell3.setCellValue("应付总额：¥" + bill.getTotalAmount().setScale(2, BigDecimal.ROUND_HALF_UP));
+        cell3.setCellValue("应付总额：¥" + actualTotalAmount.setScale(2, BigDecimal.ROUND_HALF_UP));
         cell3.setCellStyle(summaryStyle);
         sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, 4));
 
@@ -291,7 +293,7 @@ public class ExcelUtil {
         // 未付金额
         Row row3 = sheet.createRow(rowNum++);
         row3.setHeight((short) 400);
-        BigDecimal unpaidAmount = bill.getTotalAmount().subtract(bill.getPaidAmount());
+        BigDecimal unpaidAmount = actualTotalAmount.subtract(bill.getPaidAmount());
         Cell cell5 = row3.createCell(0);
         cell5.setCellValue("未付金额：¥" + unpaidAmount.setScale(2, BigDecimal.ROUND_HALF_UP));
         cell5.setCellStyle(summaryStyle);

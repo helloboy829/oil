@@ -8,6 +8,7 @@ import com.oil.system.mapper.CustomerMapper;
 import com.oil.system.service.CustomerService;
 import com.oil.system.service.OrderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CustomerServiceImpl extends ServiceImpl<CustomerMapper, Customer> implements CustomerService {
 
+    @Lazy
     private final OrderService orderService;
 
     @Override

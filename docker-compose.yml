@@ -35,8 +35,8 @@ services:
       dockerfile: Dockerfile
     container_name: oil-backend
     restart: always
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/oil_system?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&serverTimezone=Asia/Shanghai
       SPRING_DATASOURCE_USERNAME: root
@@ -49,7 +49,7 @@ services:
       mysql:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/product/page?current=1&size=1"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/api/product/page?current=1&size=1"]
       interval: 30s
       timeout: 10s
       retries: 3

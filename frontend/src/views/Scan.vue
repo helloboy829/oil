@@ -1,10 +1,5 @@
 <template>
   <div class="scan-container">
-    <!-- 头部 -->
-    <div class="header">
-      <h1>扫码开单</h1>
-    </div>
-
     <!-- 扫码区域 -->
     <div class="scan-section">
       <!-- 手动搜索（备用） -->
@@ -127,11 +122,6 @@
         <span class="total-label">总计：</span>
         <span class="total-amount">¥{{ totalAmount }}</span>
       </div>
-    </div>
-
-    <!-- 空购物车提示 -->
-    <div v-else class="empty-cart">
-      <p>请扫描商品二维码添加商品</p>
     </div>
 
     <!-- 底部结算按钮 -->

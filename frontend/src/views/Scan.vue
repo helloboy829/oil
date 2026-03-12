@@ -124,6 +124,11 @@
       </div>
     </div>
 
+    <!-- 空购物车提示 -->
+    <div v-else class="empty-cart">
+      <p>请扫描商品二维码添加商品</p>
+    </div>
+
     <!-- 底部结算按钮 -->
     <div class="bottom-bar" v-if="cart.length > 0">
       <div class="bottom-total">

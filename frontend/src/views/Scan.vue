@@ -7,6 +7,45 @@
 
     <!-- 扫码区域 -->
     <div class="scan-section">
+      <!-- 手动搜索（备用） -->
+      <div class="manual-search">
+        <div class="manual-search-label">
+          <el-icon><Search /></el-icon>
+          扫不出来？手动搜索商品
+        </div>
+        <el-select
+          v-model="selectedProduct"
+          filterable
+          remote
+          reserve-keyword
+          placeholder="输入商品名称搜索..."
+          :remote-method="searchProductRemote"
+          :loading="productLoading"
+          size="large"
+          style="width: 100%;"
+          clearable
+          @change="handleProductSelect"
+          @focus="loadAllProducts"
+        >
+          <el-option
+            v-for="product in productList"
+            :key="product.id"
+            :label="product.name"
+            :value="product.id"
+          >
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span>{{ product.name }}</span>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <span style="color: #f56c6c; font-weight: bold;">¥{{ product.price }}</span>
+                <el-tag size="small" :type="product.stock > 10 ? 'success' : 'warning'">
+                  库存: {{ product.stock }}
+                </el-tag>
+              </div>
+            </div>
+          </el-option>
+        </el-select>
+      </div>
+
       <!-- 扫码时显示视频窗口 -->
       <video id="video" ref="video" v-show="scanning" autoplay></video>
 
@@ -49,40 +88,6 @@
         </el-upload>
       </div>
 
-      <!-- 手动搜索（备用） -->
-      <div class="manual-search">
-        <el-select
-          v-model="selectedProduct"
-          filterable
-          remote
-          reserve-keyword
-          placeholder="扫不出来？输入商品名称搜索"
-          :remote-method="searchProductRemote"
-          :loading="productLoading"
-          size="large"
-          style="width: 100%;"
-          clearable
-          @change="handleProductSelect"
-          @focus="loadAllProducts"
-        >
-          <el-option
-            v-for="product in productList"
-            :key="product.id"
-            :label="product.name"
-            :value="product.id"
-          >
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span>{{ product.name }}</span>
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <span style="color: #f56c6c; font-weight: bold;">¥{{ product.price }}</span>
-                <el-tag size="small" :type="product.stock > 10 ? 'success' : 'warning'">
-                  库存: {{ product.stock }}
-                </el-tag>
-              </div>
-            </div>
-          </el-option>
-        </el-select>
-      </div>
     </div>
 
     <!-- 购物车 -->
@@ -860,7 +865,33 @@ onUnmounted(() => {
 
 /* 手动搜索 */
 .manual-search {
-  margin-top: 20px;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, #fff7e6 0%, #fff3cd 100%);
+  border: 2px dashed #f59e0b;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.manual-search-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #d97706;
+  margin-bottom: 10px;
+}
+
+.manual-search :deep(.el-select .el-input__wrapper) {
+  border: 2px solid #f59e0b;
+  border-radius: 8px;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.manual-search :deep(.el-select .el-input__wrapper:hover),
+.manual-search :deep(.el-select .el-input__wrapper.is-focus) {
+  border-color: #d97706;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.25);
 }
 
 .search-results {

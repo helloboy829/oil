@@ -45,7 +45,20 @@
             <el-icon class="title-icon"><User /></el-icon>
             <span>客户列表</span>
           </div>
-          <el-button type="primary" @click="handleAdd" icon="Plus">新增客户</el-button>
+          <div class="header-actions">
+            <el-popover placement="bottom-end" :width="180" trigger="click">
+              <template #reference>
+                <el-button icon="Setting" plain>列设置</el-button>
+              </template>
+              <div class="col-settings">
+                <div class="col-settings-title">可选显示列</div>
+                <el-checkbox v-model="visibleCols.phone" label="联系电话" />
+                <el-checkbox v-model="visibleCols.address" label="地址" />
+                <el-checkbox v-model="visibleCols.isMonthly" label="是否月结" />
+              </div>
+            </el-popover>
+            <el-button type="primary" @click="handleAdd" icon="Plus">新增客户</el-button>
+          </div>
         </div>
       </template>
 
@@ -77,9 +90,9 @@
       <el-table :data="tableData" class="modern-table desktop-table-view">
         <el-table-column prop="id" label="ID" width="80" align="center" />
         <el-table-column prop="name" label="客户姓名" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="phone" label="联系电话" min-width="140" />
-        <el-table-column prop="address" label="地址" min-width="200" show-overflow-tooltip />
-        <el-table-column label="是否月结" min-width="100" align="center">
+        <el-table-column v-if="visibleCols.phone" prop="phone" label="联系电话" min-width="140" />
+        <el-table-column v-if="visibleCols.address" prop="address" label="地址" min-width="200" show-overflow-tooltip />
+        <el-table-column v-if="visibleCols.isMonthly" label="是否月结" min-width="100" align="center">
           <template #default="{ row }">
             <el-tag :type="row.isMonthly ? 'success' : 'info'" size="small">
               {{ row.isMonthly ? '月结' : '普通' }}
@@ -172,6 +185,9 @@ const searchForm = reactive({
   name: '',
   isMonthly: undefined
 })
+
+// 列可见性控制
+const visibleCols = reactive({ phone: true, address: true, isMonthly: true })
 
 // 搜索下拉列表
 const customerNameList = ref([])
@@ -388,6 +404,32 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.col-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.col-settings-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.col-settings .el-checkbox {
+  display: flex;
+  margin-left: 0;
 }
 
 .header-title {

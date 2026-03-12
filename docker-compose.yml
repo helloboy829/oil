@@ -35,8 +35,8 @@ services:
       dockerfile: Dockerfile
     container_name: oil-backend
     restart: always
-    ports:
-      - "8080:8080"
+    # ports:
+    #   - "8080:8080"  # 不暴露到外部，仅容器内部通信
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/oil_system?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&serverTimezone=Asia/Shanghai
       SPRING_DATASOURCE_USERNAME: root

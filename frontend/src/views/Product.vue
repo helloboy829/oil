@@ -39,7 +39,20 @@
             <el-icon class="title-icon"><Goods /></el-icon>
             <span>商品列表</span>
           </div>
-          <el-button type="primary" @click="handleAdd" icon="Plus">新增商品</el-button>
+          <div class="header-actions">
+            <el-popover placement="bottom-end" :width="180" trigger="click">
+              <template #reference>
+                <el-button icon="Setting" plain>列设置</el-button>
+              </template>
+              <div class="col-settings">
+                <div class="col-settings-title">可选显示列</div>
+                <el-checkbox v-model="visibleCols.spec" label="规格型号" />
+                <el-checkbox v-model="visibleCols.unit" label="单位" />
+                <el-checkbox v-model="visibleCols.stock" label="库存" />
+              </div>
+            </el-popover>
+            <el-button type="primary" @click="handleAdd" icon="Plus">新增商品</el-button>
+          </div>
         </div>
       </template>
 
@@ -86,14 +99,14 @@
         <el-table-column prop="id" label="ID" width="80" align="center" />
         <el-table-column prop="name" label="商品名称" min-width="180" show-overflow-tooltip />
         <el-table-column prop="code" label="商品编码" min-width="150" />
-        <el-table-column prop="spec" label="规格型号" min-width="120" />
-        <el-table-column prop="unit" label="单位" width="80" align="center" />
+        <el-table-column v-if="visibleCols.spec" prop="spec" label="规格型号" min-width="120" />
+        <el-table-column v-if="visibleCols.unit" prop="unit" label="单位" width="80" align="center" />
         <el-table-column prop="price" label="单价" width="120" align="right">
           <template #default="{ row }">
             <span class="price-text">¥{{ row.price?.toFixed(2) || '0.00' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="stock" label="库存" width="100" align="center">
+        <el-table-column prop="stock" label="库存" v-if="visibleCols.stock" width="100" align="center">
           <template #default="{ row }">
             <el-tag :type="row.stock > 10 ? 'success' : row.stock > 0 ? 'warning' : 'danger'" size="small">
               {{ row.stock }}
@@ -209,6 +222,9 @@ const formRules = {
 }
 
 const searchForm = reactive({ name: '' })
+
+// 列可见性控制
+const visibleCols = reactive({ spec: true, unit: true, stock: true })
 
 // 搜索下拉列表
 const productNameList = ref([])
@@ -469,6 +485,32 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.col-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.col-settings-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.col-settings .el-checkbox {
+  display: flex;
+  margin-left: 0;
 }
 
 .header-title {

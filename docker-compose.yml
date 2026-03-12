@@ -10,13 +10,29 @@ services:
       MYSQL_ROOT_PASSWORD: 123456
       MYSQL_DATABASE: oil_system
       TZ: Asia/Shanghai
+    # 添加内存限制，防止OOM
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
     # ports:
     #   - "3306:3306"  # 注释掉端口映射，避免与宿主机MySQL冲突
     volumes:
       - ./data/mysql:/var/lib/mysql
       - ./deploy/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./data/backups:/backups
-    command: --default-authentication-plugin=mysql_native_password
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --init-connect='SET NAMES utf8mb4'
+      --max_connections=50
+      --innodb_buffer_pool_size=128M
+      --innodb_log_file_size=32M
+      --innodb_flush_log_at_trx_commit=2
+      --performance_schema=0
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -37,6 +53,13 @@ services:
     restart: always
     # ports:
     #   - "8080:8080"  # 不暴露到外部，仅容器内部通信
+    # 添加内存限制
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+        reservations:
+          memory: 512M
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/oil_system?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&serverTimezone=Asia/Shanghai
       SPRING_DATASOURCE_USERNAME: root
@@ -69,6 +92,13 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    # 添加内存限制
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
     depends_on:
       - backend
     healthcheck:

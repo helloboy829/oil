@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -46,11 +45,14 @@ public class StatisticsController {
         String endDateTime = end + " 23:59:59";
 
         // 趋势格式
-        String fmt = switch (type) {
-            case "month" -> "%Y-%m";
-            case "week"  -> "%x-%v";  // ISO year-week
-            default      -> "%Y-%m-%d";
-        };
+        String fmt;
+        if ("month".equals(type)) {
+            fmt = "%Y-%m";
+        } else if ("week".equals(type)) {
+            fmt = "%x-%v";
+        } else {
+            fmt = "%Y-%m-%d";
+        }
 
         List<StatisticsVO.TrendItem> trend =
                 ordersMapper.selectTrend(fmt, startDateTime, endDateTime);

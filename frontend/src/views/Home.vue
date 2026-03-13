@@ -49,6 +49,10 @@
           <el-icon><Tickets /></el-icon>
           <span>月结账单</span>
         </el-menu-item>
+        <el-menu-item index="/statistics">
+          <el-icon><TrendCharts /></el-icon>
+          <span>数据统计</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -84,6 +88,7 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { TrendCharts } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const activeMenu = computed(() => route.path)
@@ -123,7 +128,8 @@ const currentRouteName = computed(() => {
     '/product': '商品管理',
     '/customer': '客户管理',
     '/order': '订单管理',
-    '/monthly-bill': '月结账单'
+    '/monthly-bill': '月结账单',
+    '/statistics': '数据统计'
   }
   return nameMap[route.path] || '首页'
 })

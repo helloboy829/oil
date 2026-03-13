@@ -1,5 +1,12 @@
 import request from '@/utils/request'
 
+// 统计相关接口
+export const statisticsApi = {
+  get(params) {
+    return request.get('/statistics', { params })
+  }
+}
+
 // 商品相关接口
 export const productApi = {
   // 分页查询商品

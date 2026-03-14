@@ -54,9 +54,9 @@
               </template>
               <div class="col-settings">
                 <div class="col-settings-title">可选显示列</div>
-                <el-checkbox v-model="visibleCols.spec" label="规格型号" />
                 <el-checkbox v-model="visibleCols.unit" label="单位" />
-                <el-checkbox v-model="visibleCols.stock" label="库存" />
+                <el-checkbox v-model="visibleCols.stock" label="数量" />
+                <el-checkbox v-model="visibleCols.remark" label="备注" />
               </div>
             </el-popover>
             <el-button type="primary" @click="handleAdd" icon="Plus">新增商品</el-button>
@@ -70,19 +70,11 @@
           <div class="product-card-header">
             <div class="product-name">{{ item.name }}</div>
             <el-tag :type="item.stock > 10 ? 'success' : item.stock > 0 ? 'warning' : 'danger'" size="small">
-              库存: {{ item.stock }}
+              数量: {{ item.stock }}
             </el-tag>
           </div>
 
           <div class="product-card-body">
-            <div class="product-info-row">
-              <span class="info-label">编码:</span>
-              <span class="info-value">{{ item.code }}</span>
-            </div>
-            <div class="product-info-row">
-              <span class="info-label">规格:</span>
-              <span class="info-value">{{ item.spec }}</span>
-            </div>
             <div class="product-info-row">
               <span class="info-label">单位:</span>
               <span class="info-value">{{ item.unit }}</span>
@@ -110,6 +102,10 @@
                 {{ ((item.price - item.cost) / item.price * 100).toFixed(1) }}%
               </el-tag>
             </div>
+            <div v-if="item.code" class="product-info-row">
+              <span class="info-label">备注:</span>
+              <span class="info-value">{{ item.code }}</span>
+            </div>
           </div>
 
           <div class="product-card-actions">
@@ -124,29 +120,16 @@
       <!-- PC端表格视图 -->
       <el-table :data="tableData" class="modern-table desktop-table-view" @row-click="handleRowClick" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
-        <el-table-column prop="id" label="ID" width="80" align="center" />
-        <el-table-column prop="name" label="商品名称" width="200" show-overflow-tooltip />
-        <el-table-column
-          prop="code"
-          label="商品编码"
-          :width="lastVisibleCol === 'code' ? undefined : 150"
-          :min-width="lastVisibleCol === 'code' ? 150 : undefined"
-        />
-        <el-table-column
-          v-if="visibleCols.spec"
-          prop="spec"
-          label="规格型号"
-          :width="lastVisibleCol === 'spec' ? undefined : 140"
-          :min-width="lastVisibleCol === 'spec' ? 140 : undefined"
-        />
-        <el-table-column
-          v-if="visibleCols.unit"
-          prop="unit"
-          label="单位"
-          :width="lastVisibleCol === 'unit' ? undefined : 80"
-          :min-width="lastVisibleCol === 'unit' ? 80 : undefined"
-          align="center"
-        />
+        <el-table-column prop="id" label="编号" width="80" align="center" />
+        <el-table-column prop="name" label="商品名称" min-width="150" show-overflow-tooltip />
+        <el-table-column v-if="visibleCols.unit" prop="unit" label="单位" width="80" align="center" />
+        <el-table-column v-if="visibleCols.stock" prop="stock" label="数量" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag :type="row.stock > 10 ? 'success' : row.stock > 0 ? 'warning' : 'danger'" size="small">
+              {{ row.stock }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="price" label="单价" width="120" align="right">
           <template #default="{ row }">
             <span class="price-text">¥{{ row.price?.toFixed(2) || '0.00' }}</span>
@@ -176,20 +159,7 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="stock"
-          label="库存"
-          v-if="visibleCols.stock"
-          :width="lastVisibleCol === 'stock' ? undefined : 100"
-          :min-width="lastVisibleCol === 'stock' ? 100 : undefined"
-          align="center"
-        >
-          <template #default="{ row }">
-            <el-tag :type="row.stock > 10 ? 'success' : row.stock > 0 ? 'warning' : 'danger'" size="small">
-              {{ row.stock }}
-            </el-tag>
-          </template>
-        </el-table-column>
+        <el-table-column v-if="visibleCols.remark" prop="code" label="备注" min-width="120" show-overflow-tooltip />
         <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons-grid">
@@ -222,14 +192,20 @@
         <el-form-item label="商品名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入商品名称" />
         </el-form-item>
-        <el-form-item label="商品编码">
-          <el-input v-model="form.code" placeholder="请输入商品编码" />
+        <el-form-item label="单位" prop="unit">
+          <el-select v-model="form.unit" placeholder="请选择单位" style="width: 100%;">
+            <el-option label="只" value="只" />
+            <el-option label="瓶" value="瓶" />
+            <el-option label="桶" value="桶" />
+            <el-option label="个" value="个" />
+            <el-option label="箱" value="箱" />
+            <el-option label="升" value="升" />
+            <el-option label="组" value="组" />
+            <el-option label="套" value="套" />
+          </el-select>
         </el-form-item>
-        <el-form-item label="规格型号">
-          <el-input v-model="form.spec" placeholder="请输入规格型号" />
-        </el-form-item>
-        <el-form-item label="单位">
-          <el-input v-model="form.unit" placeholder="请输入单位" />
+        <el-form-item label="数量" prop="stock">
+          <el-input-number v-model="form.stock" :min="0" :step="1" style="width: 100%;" />
         </el-form-item>
         <el-form-item label="单价" prop="price">
           <el-input-number v-model="form.price" :precision="2" :min="0" :step="0.1" style="width: 100%;" />
@@ -237,8 +213,8 @@
         <el-form-item v-if="authStore.isAdmin" label="成本价">
           <el-input-number v-model="form.cost" :precision="2" :min="0" clearable style="width: 100%;" placeholder="不填写成本时，该商品不参与利润统计" />
         </el-form-item>
-        <el-form-item label="库存">
-          <el-input-number v-model="form.stock" :min="0" :step="1" style="width: 100%;" />
+        <el-form-item label="备注">
+          <el-input v-model="form.code" type="textarea" :rows="2" placeholder="请输入备注信息" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -308,15 +284,7 @@ const formRules = {
 const searchForm = reactive({ name: '' })
 
 // 列可见性控制
-const visibleCols = reactive({ spec: true, unit: true, stock: true })
-
-// 计算最后一个可见列，用于自动扩展填充空白
-const lastVisibleCol = computed(() => {
-  if (visibleCols.stock) return 'stock'
-  if (visibleCols.unit) return 'unit'
-  if (visibleCols.spec) return 'spec'
-  return 'code'
-})
+const visibleCols = reactive({ unit: true, stock: true, remark: true })
 
 // 搜索下拉列表
 const productNameList = ref([])
@@ -331,9 +299,9 @@ const dialogTitle = ref('新增商品')
 const form = reactive({
   id: null,
   name: '',
-  code: '',
-  spec: '',
-  unit: '瓶',
+  code: '',  // 现在用作备注
+  spec: '',  // 保留字段（后端兼容）
+  unit: '只',  // 默认单位改为"只"
   price: 0,
   stock: 0,
   cost: null
@@ -398,7 +366,7 @@ const handleReset = () => {
 
 const handleAdd = () => {
   dialogTitle.value = '新增商品'
-  Object.assign(form, { id: null, name: '', code: '', spec: '', unit: '瓶', price: 0, stock: 0, cost: null })
+  Object.assign(form, { id: null, name: '', code: '', spec: '', unit: '只', price: 0, stock: 0, cost: null })
   dialogVisible.value = true
 }
 
@@ -689,6 +657,13 @@ onMounted(() => {
 /* 价格样式 */
 .price-text {
   color: var(--primary-color);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* 金额样式 */
+.amount-text {
+  color: var(--success-color);
   font-weight: 600;
   font-size: 15px;
 }

@@ -597,7 +597,7 @@ const clearCart = () => {
 // 显示结算对话框
 const showCheckout = () => {
   checkoutVisible.value = true
-  // 打开对话框时加载所有客户
+  // 打开对话框时加载所有客户并默认选择 "xxx"
   loadAllCustomers()
 }
 
@@ -606,6 +606,14 @@ const loadAllCustomers = async () => {
   if (allCustomers.value.length > 0) {
     // 如果已经缓存了，直接使用
     customerList.value = allCustomers.value
+    // 默认选中 "xxx" 客户
+    if (!orderForm.value.customerName) {
+      const defaultCustomer = customerList.value.find(c => c.name === 'xxx')
+      if (defaultCustomer) {
+        orderForm.value.customerName = defaultCustomer.name
+        handleCustomerChange(defaultCustomer.name)
+      }
+    }
     return
   }
 
@@ -615,8 +623,25 @@ const loadAllCustomers = async () => {
       current: 1,
       size: 1000 // 获取所有客户
     })
-    allCustomers.value = res.data.records || []
+    const customers = res.data.records || []
+
+    // 将 "xxx" 客户置顶
+    const defaultCustomer = customers.find(c => c.name === 'xxx')
+    const otherCustomers = customers.filter(c => c.name !== 'xxx')
+
+    if (defaultCustomer) {
+      allCustomers.value = [defaultCustomer, ...otherCustomers]
+    } else {
+      allCustomers.value = customers
+    }
+
     customerList.value = allCustomers.value
+
+    // 默认选中 "xxx" 客户
+    if (!orderForm.value.customerName && defaultCustomer) {
+      orderForm.value.customerName = defaultCustomer.name
+      handleCustomerChange(defaultCustomer.name)
+    }
   } catch (err) {
     console.error('加载客户列表失败', err)
   } finally {

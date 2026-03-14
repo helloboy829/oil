@@ -28,6 +28,10 @@ export const productApi = {
   // 删除商品
   delete(id) {
     return request.delete(`/product/${id}`)
+  },
+  // 批量删除商品
+  deleteBatch(ids) {
+    return request.delete('/product/batch', { data: ids })
   }
 }
 
@@ -52,5 +56,9 @@ export const customerApi = {
   // 删除客户（force=true 同时删订单；keep=true 保留订单只删客户）
   delete(id, { force = false, keep = false } = {}) {
     return request.delete(`/customer/${id}`, { params: { force, keep } })
+  },
+  // 批量删除客户
+  deleteBatch(ids, force = false) {
+    return request.delete('/customer/batch', { data: ids, params: { force } })
   }
 }

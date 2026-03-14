@@ -40,6 +40,14 @@
             <span>商品列表</span>
           </div>
           <div class="header-actions">
+            <el-button
+              v-if="selectedRows.length > 0"
+              type="danger"
+              @click="handleBatchDelete"
+              icon="Delete"
+            >
+              批量删除 ({{ selectedRows.length }})
+            </el-button>
             <el-popover placement="bottom-end" :width="180" trigger="click">
               <template #reference>
                 <el-button icon="Setting" plain>列设置</el-button>
@@ -95,7 +103,8 @@
       </div>
 
       <!-- PC端表格视图 -->
-      <el-table :data="tableData" class="modern-table desktop-table-view" @row-click="handleRowClick">
+      <el-table :data="tableData" class="modern-table desktop-table-view" @row-click="handleRowClick" @selection-change="handleSelectionChange">
+        <el-table-column type="selection" width="55" align="center" />
         <el-table-column prop="id" label="ID" width="80" align="center" />
         <el-table-column prop="name" label="商品名称" min-width="180" show-overflow-tooltip />
         <el-table-column prop="code" label="商品编码" min-width="150" />
@@ -232,6 +241,7 @@ const productNameLoading = ref(false)
 const allProductNames = ref([]) // 缓存所有商品名称
 
 const tableData = ref([])
+const selectedRows = ref([])
 const pagination = reactive({ current: 1, size: 10, total: 0 })
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增商品')
@@ -366,6 +376,37 @@ const handleDelete = (row) => {
   })
 }
 
+const handleSelectionChange = (selection) => {
+  selectedRows.value = selection
+}
+
+const handleBatchDelete = () => {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning('请先选择要删除的商品')
+    return
+  }
+
+  ElMessageBox.confirm(`确定删除选中的 ${selectedRows.value.length} 个商品吗？`, '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      const ids = selectedRows.value.map(row => row.id)
+      await productApi.deleteBatch(ids)
+      ElMessage.success('批量删除成功')
+      selectedRows.value = []
+      // 清空缓存，强制重新加载
+      allProductNames.value = []
+      setTimeout(async () => {
+        await loadData()
+      }, 100)
+    } catch (error) {
+      ElMessage.error('批量删除失败：' + (error.response?.data?.message || error.message || '未知错误'))
+    }
+  })
+}
+
 // 行点击事件（可选）
 const handleRowClick = (row) => {
   // 可以添加行点击逻辑，例如显示详情
@@ -490,7 +531,7 @@ onMounted(() => {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .col-settings {

@@ -65,4 +65,13 @@ public class MonthlyBillController {
         monthlyBillService.removeById(id);
         return Result.success();
     }
+
+    /**
+     * 批量删除月结账单
+     */
+    @DeleteMapping("/batch")
+    public Result<Void> deleteBatch(@RequestBody java.util.List<Long> ids) {
+        monthlyBillService.removeByIds(ids);
+        return Result.success();
+    }
 }

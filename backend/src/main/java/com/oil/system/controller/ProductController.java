@@ -74,6 +74,15 @@ public class ProductController {
     }
 
     /**
+     * 批量删除商品
+     */
+    @DeleteMapping("/batch")
+    public Result<Void> deleteBatch(@RequestBody java.util.List<Long> ids) {
+        productService.removeByIds(ids);
+        return Result.success();
+    }
+
+    /**
      * 生成商品二维码
      */
     @PostMapping("/qrcode/{id}")

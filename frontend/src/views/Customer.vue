@@ -46,6 +46,14 @@
             <span>客户列表</span>
           </div>
           <div class="header-actions">
+            <el-button
+              v-if="selectedRows.length > 0"
+              type="danger"
+              @click="handleBatchDelete"
+              icon="Delete"
+            >
+              批量删除 ({{ selectedRows.length }})
+            </el-button>
             <el-popover placement="bottom-end" :width="180" trigger="click">
               <template #reference>
                 <el-button icon="Setting" plain>列设置</el-button>
@@ -87,7 +95,8 @@
       </div>
 
       <!-- PC端表格视图 -->
-      <el-table :data="tableData" class="modern-table desktop-table-view">
+      <el-table :data="tableData" class="modern-table desktop-table-view" @selection-change="handleSelectionChange">
+        <el-table-column type="selection" width="55" align="center" />
         <el-table-column prop="id" label="ID" width="80" align="center" />
         <el-table-column prop="name" label="客户姓名" min-width="140" show-overflow-tooltip />
         <el-table-column v-if="visibleCols.phone" prop="phone" label="联系电话" min-width="140" />
@@ -198,6 +207,7 @@ const tableData = ref([])
 const pagination = reactive({ current: 1, size: 10, total: 0 })
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增客户')
+const selectedRows = ref([])
 const form = reactive({
   id: null,
   name: '',
@@ -361,6 +371,34 @@ const handleDelete = async (row) => {
   }
 }
 
+const handleSelectionChange = (selection) => {
+  selectedRows.value = selection
+}
+
+const handleBatchDelete = () => {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning('请先选择要删除的客户')
+    return
+  }
+
+  ElMessageBox.confirm(`确定删除选中的 ${selectedRows.value.length} 个客户吗？`, '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    const ids = selectedRows.value.map(row => row.id)
+    await customerApi.deleteBatch(ids, false)
+    ElMessage.success('批量删除成功')
+    selectedRows.value = []
+    allCustomerNames.value = []
+    setTimeout(async () => {
+      await loadData()
+    }, 100)
+  }).catch(() => {
+    // 用户取消操作
+  })
+}
+
 onMounted(() => {
   loadData()
 })
@@ -409,7 +447,7 @@ onMounted(() => {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .col-settings {

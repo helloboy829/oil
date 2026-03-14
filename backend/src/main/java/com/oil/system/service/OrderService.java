@@ -12,6 +12,11 @@ public interface OrderService extends IService<Orders> {
     Orders createOrder(OrderDTO orderDTO);
 
     /**
+     * 更新订单
+     */
+    Orders updateOrder(Long orderId, OrderDTO orderDTO);
+
+    /**
      * 根据商品编码扫码添加商品
      */
     void scanProduct(String productCode);

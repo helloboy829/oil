@@ -10,6 +10,10 @@ export const orderApi = {
   create(data) {
     return request.post('/order', data)
   },
+  // 更新订单
+  update(id, data) {
+    return request.put(`/order/${id}`, data)
+  },
   // 查询订单详情
   getById(id) {
     return request.get(`/order/${id}`)
@@ -17,6 +21,10 @@ export const orderApi = {
   // 删除订单
   delete(id) {
     return request.delete(`/order/${id}`)
+  },
+  // 批量删除订单
+  deleteBatch(ids) {
+    return request.delete('/order/batch', { data: ids })
   }
 }
 
@@ -41,5 +49,9 @@ export const monthlyBillApi = {
   // 删除月结账单
   delete(id) {
     return request.delete(`/monthly-bill/${id}`)
+  },
+  // 批量删除月结账单
+  deleteBatch(ids) {
+    return request.delete('/monthly-bill/batch', { data: ids })
   }
 }

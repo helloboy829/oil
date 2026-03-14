@@ -95,4 +95,16 @@ public class CustomerController {
         customerService.deleteById(id, force);
         return Result.success();
     }
+
+    /**
+     * 批量删除客户
+     */
+    @DeleteMapping("/batch")
+    public Result<Void> deleteBatch(@RequestBody java.util.List<Long> ids,
+                                     @RequestParam(defaultValue = "false") boolean force) {
+        for (Long id : ids) {
+            customerService.deleteById(id, force);
+        }
+        return Result.success();
+    }
 }

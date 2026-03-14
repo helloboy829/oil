@@ -67,7 +67,17 @@
             <el-icon class="title-icon"><Document /></el-icon>
             <span>订单列表</span>
           </div>
-          <el-button type="primary" @click="handleAdd" icon="Plus">创建订单</el-button>
+          <div class="header-actions">
+            <el-button
+              v-if="selectedRows.length > 0"
+              type="danger"
+              @click="handleBatchDelete"
+              icon="Delete"
+            >
+              批量删除 ({{ selectedRows.length }})
+            </el-button>
+            <el-button type="primary" @click="handleAdd" icon="Plus">创建订单</el-button>
+          </div>
         </div>
       </template>
 
@@ -101,13 +111,15 @@
 
           <div class="order-card-actions">
             <el-button type="primary" size="small" @click="handleView(item)" icon="View">查看详情</el-button>
+            <el-button type="warning" size="small" @click="handleEdit(item)" icon="Edit">编辑</el-button>
             <el-button type="danger" size="small" @click="handleDelete(item)" icon="Delete">删除</el-button>
           </div>
         </div>
       </div>
 
       <!-- PC端表格视图 -->
-      <el-table :data="formattedTableData" class="modern-table desktop-table-view" :row-class-name="getRowClass">
+      <el-table :data="formattedTableData" class="modern-table desktop-table-view" :row-class-name="getRowClass" @selection-change="handleSelectionChange">
+        <el-table-column type="selection" width="55" align="center" />
         <el-table-column prop="orderNo" label="订单编号" min-width="180" show-overflow-tooltip />
         <el-table-column prop="customerName" label="客户姓名" min-width="120" />
         <el-table-column prop="totalAmount" label="订单金额" min-width="120" align="right">
@@ -123,10 +135,11 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" min-width="170" align="center" />
-        <el-table-column label="操作" width="200" fixed="right" align="center">
+        <el-table-column label="操作" width="250" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">
               <el-button type="primary" size="small" @click="handleView(row)" icon="View">详情</el-button>
+              <el-button type="warning" size="small" @click="handleEdit(row)" icon="Edit">编辑</el-button>
               <el-button type="danger" size="small" @click="handleDelete(row)" icon="Delete">删除</el-button>
             </div>
           </template>
@@ -147,11 +160,24 @@
       </div>
     </el-card>
 
-    <!-- 创建订单对话框 -->
-    <el-dialog v-model="dialogVisible" title="创建订单" width="800px" class="modern-dialog" lock-scroll>
+    <!-- 创建/编辑订单对话框 -->
+    <el-dialog v-model="dialogVisible" :title="isEditMode ? '编辑订单' : '创建订单'" width="800px" class="modern-dialog" lock-scroll>
       <el-form ref="formRef" :model="form" :rules="formRules" label-width="100px" class="modern-form">
         <el-form-item label="客户姓名" prop="customerName">
-          <el-input v-model="form.customerName" placeholder="请输入客户姓名" />
+          <el-select
+            v-model="form.customerName"
+            filterable
+            placeholder="请选择或输入客户姓名"
+            style="width: 100%;"
+            @focus="loadAllCustomerNames"
+          >
+            <el-option
+              v-for="name in customerNameList"
+              :key="name"
+              :label="name"
+              :value="name"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="支付方式">
           <el-select v-model="form.paymentType" placeholder="请选择支付方式" style="width: 100%;">
@@ -175,9 +201,22 @@
 
         <el-table :data="form.items" border class="items-table">
           <el-table-column type="index" label="序号" width="60" align="center" />
-          <el-table-column label="商品编码" min-width="180">
+          <el-table-column label="商品" min-width="200">
             <template #default="{ row }">
-              <el-input v-model="row.productCode" placeholder="扫码或输入商品编码" />
+              <el-select
+                v-model="row.productCode"
+                filterable
+                placeholder="请选择或输入商品编码"
+                style="width: 100%;"
+                @focus="loadAllProducts"
+              >
+                <el-option
+                  v-for="product in productList"
+                  :key="product.code"
+                  :label="`${product.name} (${product.code})`"
+                  :value="product.code"
+                />
+              </el-select>
             </template>
           </el-table-column>
           <el-table-column label="数量" width="150">
@@ -296,7 +335,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { orderApi } from '@/api/order'
-import { customerApi } from '@/api/index'
+import { customerApi, productApi } from '@/api/index'
 import { formatDateTime } from '@/utils/format'
 
 // 表单引用
@@ -318,16 +357,22 @@ const searchForm = reactive({
 // 搜索下拉列表
 const orderNoList = ref([])
 const customerNameList = ref([])
+const productList = ref([])
 const orderNoLoading = ref(false)
 const customerNameLoading = ref(false)
+const productLoading = ref(false)
 const allOrderNos = ref([]) // 缓存所有订单编号
 const allCustomerNames = ref([]) // 缓存所有客户姓名
+const allProducts = ref([]) // 缓存所有商品
 
 const tableData = ref([])
 const pagination = reactive({ current: 1, size: 10, total: 0 })
 const dialogVisible = ref(false)
 const detailVisible = ref(false)
 const currentOrder = ref(null)
+const isEditMode = ref(false)
+const editingOrderId = ref(null)
+const selectedRows = ref([])
 const form = reactive({
   customerName: '',
   paymentType: '',
@@ -440,6 +485,28 @@ const searchCustomerName = async (query) => {
   )
 }
 
+// 加载所有商品（点击商品选择框时）
+const loadAllProducts = async () => {
+  if (allProducts.value.length > 0) {
+    productList.value = allProducts.value
+    return
+  }
+
+  try {
+    productLoading.value = true
+    const res = await productApi.getPage({
+      current: 1,
+      size: 1000
+    })
+    allProducts.value = res.data.records
+    productList.value = allProducts.value
+  } catch (err) {
+    console.error('加载商品列表失败', err)
+  } finally {
+    productLoading.value = false
+  }
+}
+
 const handleReset = () => {
   searchForm.orderNo = ''
   searchForm.customerName = ''
@@ -448,6 +515,8 @@ const handleReset = () => {
 }
 
 const handleAdd = () => {
+  isEditMode.value = false
+  editingOrderId.value = null
   Object.assign(form, {
     customerName: '',
     paymentType: '',
@@ -455,6 +524,57 @@ const handleAdd = () => {
     items: []
   })
   dialogVisible.value = true
+}
+
+const handleEdit = async (row) => {
+  try {
+    const res = await orderApi.getById(row.id)
+    isEditMode.value = true
+    editingOrderId.value = row.id
+
+    // 填充表单数据
+    Object.assign(form, {
+      customerName: res.data.order.customerName,
+      paymentType: res.data.order.paymentType,
+      remark: res.data.order.remark || '',
+      items: res.data.items.map(item => ({
+        productCode: item.productCode,
+        quantity: item.quantity
+      }))
+    })
+
+    dialogVisible.value = true
+  } catch (err) {
+    ElMessage.error('获取订单详情失败')
+  }
+}
+
+const handleSelectionChange = (selection) => {
+  selectedRows.value = selection
+}
+
+const handleBatchDelete = () => {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning('请先选择要删除的订单')
+    return
+  }
+
+  ElMessageBox.confirm(`确定删除选中的 ${selectedRows.value.length} 个订单吗？`, '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    const ids = selectedRows.value.map(row => row.id)
+    await orderApi.deleteBatch(ids)
+    ElMessage.success('批量删除成功')
+    selectedRows.value = []
+    // 清空缓存，强制重新加载
+    allOrderNos.value = []
+    allCustomerNames.value = []
+    setTimeout(async () => {
+      await loadData()
+    }, 100)
+  })
 }
 
 const handleAddItem = () => {
@@ -501,8 +621,16 @@ const handleSubmit = async () => {
     }
   }
 
-  await orderApi.create(form)
-  ElMessage.success('创建成功')
+  if (isEditMode.value) {
+    // 编辑模式
+    await orderApi.update(editingOrderId.value, form)
+    ElMessage.success('更新成功')
+  } else {
+    // 创建模式
+    await orderApi.create(form)
+    ElMessage.success('创建成功')
+  }
+
   // 清空缓存，强制重新加载
   allOrderNos.value = []
   allCustomerNames.value = []
@@ -618,6 +746,11 @@ onMounted(() => {
   font-size: 18px;
   font-weight: 600;
   color: var(--text-main);
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
 }
 
 .title-icon {
@@ -958,7 +1091,7 @@ onMounted(() => {
 
 .order-card-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
 }
 

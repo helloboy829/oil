@@ -1,5 +1,6 @@
 package com.oil.system.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.oil.system.dto.OrderDTO;
 import com.oil.system.dto.OrderItemDTO;
@@ -98,6 +99,99 @@ public class OrderServiceImpl extends ServiceImpl<OrdersMapper, Orders> implemen
         }
 
         return order;
+    }
+
+    @Override
+    @Transactional
+    public Orders updateOrder(Long orderId, OrderDTO orderDTO) {
+        // 查询原订单
+        Orders oldOrder = getById(orderId);
+        if (oldOrder == null) {
+            throw new RuntimeException("订单不存在");
+        }
+
+        // 查询原订单明细
+        List<OrderItem> oldItems = orderItemService.lambdaQuery()
+                .eq(OrderItem::getOrderId, orderId)
+                .list();
+
+        // 恢复原订单商品的库存
+        for (OrderItem oldItem : oldItems) {
+            Product product = productService.getById(oldItem.getProductId());
+            if (product != null) {
+                product.setStock(product.getStock() + oldItem.getQuantity());
+                productService.updateById(product);
+            }
+        }
+
+        // 删除原订单明细
+        orderItemService.remove(
+                new LambdaQueryWrapper<OrderItem>().eq(OrderItem::getOrderId, orderId)
+        );
+
+        // 计算新订单总金额
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        for (OrderItemDTO itemDTO : orderDTO.getItems()) {
+            Product product = null;
+            if (itemDTO.getProductCode() != null && !itemDTO.getProductCode().isEmpty()) {
+                product = productService.lambdaQuery()
+                        .eq(Product::getCode, itemDTO.getProductCode())
+                        .one();
+            } else if (itemDTO.getProductId() != null) {
+                product = productService.getById(itemDTO.getProductId());
+            }
+
+            if (product == null) {
+                String identifier = itemDTO.getProductCode() != null ? itemDTO.getProductCode() : String.valueOf(itemDTO.getProductId());
+                throw new RuntimeException("商品不存在: " + identifier);
+            }
+            // 检查库存
+            if (product.getStock() < itemDTO.getQuantity()) {
+                throw new RuntimeException("商品库存不足: " + product.getName() + " (库存: " + product.getStock() + ")");
+            }
+            BigDecimal subtotal = product.getPrice().multiply(new BigDecimal(itemDTO.getQuantity()));
+            totalAmount = totalAmount.add(subtotal);
+        }
+
+        // 更新订单主表
+        oldOrder.setCustomerId(orderDTO.getCustomerId());
+        oldOrder.setCustomerName(orderDTO.getCustomerName());
+        oldOrder.setPaymentType(orderDTO.getPaymentType());
+        oldOrder.setRemark(orderDTO.getRemark());
+        oldOrder.setTotalAmount(totalAmount);
+        updateById(oldOrder);
+
+        // 保存新订单明细并扣减库存
+        for (OrderItemDTO itemDTO : orderDTO.getItems()) {
+            Product product = null;
+            if (itemDTO.getProductCode() != null && !itemDTO.getProductCode().isEmpty()) {
+                product = productService.lambdaQuery()
+                        .eq(Product::getCode, itemDTO.getProductCode())
+                        .one();
+            } else if (itemDTO.getProductId() != null) {
+                product = productService.getById(itemDTO.getProductId());
+            }
+
+            if (product != null) {
+                OrderItem item = new OrderItem();
+                item.setOrderId(orderId);
+                item.setProductId(product.getId());
+                item.setProductName(product.getName());
+                item.setProductCode(product.getCode());
+                item.setProductSpec(product.getSpec());
+                item.setUnit(product.getUnit());
+                item.setPrice(product.getPrice());
+                item.setQuantity(itemDTO.getQuantity());
+                item.setSubtotal(product.getPrice().multiply(new BigDecimal(itemDTO.getQuantity())));
+                orderItemService.save(item);
+
+                // 扣减库存
+                product.setStock(product.getStock() - itemDTO.getQuantity());
+                productService.updateById(product);
+            }
+        }
+
+        return oldOrder;
     }
 
     @Override

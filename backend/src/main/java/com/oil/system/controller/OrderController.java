@@ -76,6 +76,15 @@ public class OrderController {
     }
 
     /**
+     * 更新订单
+     */
+    @PutMapping("/{id}")
+    public Result<Orders> update(@PathVariable Long id, @RequestBody OrderDTO orderDTO) {
+        Orders order = orderService.updateOrder(id, orderDTO);
+        return Result.success(order);
+    }
+
+    /**
      * 查询订单详情（包含订单明细）
      */
     @GetMapping("/{id}")
@@ -89,6 +98,15 @@ public class OrderController {
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         orderService.removeById(id);
+        return Result.success();
+    }
+
+    /**
+     * 批量删除订单
+     */
+    @DeleteMapping("/batch")
+    public Result<Void> deleteBatch(@RequestBody List<Long> ids) {
+        orderService.removeByIds(ids);
         return Result.success();
     }
 }

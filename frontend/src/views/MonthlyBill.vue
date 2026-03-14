@@ -7,7 +7,17 @@
             <el-icon class="title-icon"><Document /></el-icon>
             <span>月结账单</span>
           </div>
-          <el-button type="primary" @click="handleGenerate" icon="Plus">生成账单</el-button>
+          <div class="header-actions">
+            <el-button
+              v-if="selectedRows.length > 0"
+              type="danger"
+              @click="handleBatchDelete"
+              icon="Delete"
+            >
+              批量删除 ({{ selectedRows.length }})
+            </el-button>
+            <el-button type="primary" @click="handleGenerate" icon="Plus">生成账单</el-button>
+          </div>
         </div>
       </template>
 
@@ -70,7 +80,8 @@
       </div>
 
       <!-- PC端表格视图 -->
-      <el-table :data="formattedTableData" border stripe class="desktop-table-view">
+      <el-table :data="formattedTableData" border stripe class="desktop-table-view" @selection-change="handleSelectionChange">
+        <el-table-column type="selection" width="55" align="center" />
         <el-table-column prop="billNo" label="账单编号" min-width="200" />
         <el-table-column prop="customerName" label="客户姓名" min-width="120" />
         <el-table-column prop="billMonth" label="账单月份" min-width="100" />
@@ -191,6 +202,7 @@ const tableData = ref([])
 const pagination = reactive({ current: 1, size: 10, total: 0 })
 const dialogVisible = ref(false)
 const customers = ref([])
+const selectedRows = ref([])
 const form = reactive({
   customerId: null,
   billMonth: ''
@@ -273,6 +285,31 @@ const handleSettle = async (row) => {
   }
 }
 
+const handleSelectionChange = (selection) => {
+  selectedRows.value = selection
+}
+
+const handleBatchDelete = () => {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning('请先选择要删除的账单')
+    return
+  }
+
+  ElMessageBox.confirm(`确定删除选中的 ${selectedRows.value.length} 个账单吗？`, '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    const ids = selectedRows.value.map(row => row.id)
+    await monthlyBillApi.deleteBatch(ids)
+    ElMessage.success('批量删除成功')
+    selectedRows.value = []
+    await loadData()
+  }).catch(() => {
+    // 用户取消删除
+  })
+}
+
 const handleDelete = (row) => {
   ElMessageBox.confirm('确定删除该账单吗？', '提示', {
     confirmButtonText: '确定',
@@ -320,6 +357,11 @@ onMounted(() => {
   font-size: 18px;
   font-weight: 600;
   color: var(--text-main);
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
 }
 
 .title-icon {
@@ -460,7 +502,12 @@ onMounted(() => {
     justify-content: center;
   }
 
-  .card-header .el-button {
+  .header-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .header-actions .el-button {
     width: 100%;
   }
 

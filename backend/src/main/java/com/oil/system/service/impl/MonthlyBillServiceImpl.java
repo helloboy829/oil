@@ -26,10 +26,11 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
     private final OrderService orderService;
     private final OrderItemService orderItemService;
     private final CustomerService customerService;
+    private final ProductService productService;
 
     @Override
     @Transactional
-    public MonthlyBill generateMonthlyBill(Long customerId, String billMonth) {
+    public MonthlyBill generateMonthlyBill(Long customerId, String billMonth, List<Long> categoryIds) {
         Customer customer = customerService.getById(customerId);
         if (customer == null) {
             throw new RuntimeException("客户不存在");
@@ -48,15 +49,41 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
                 .le(Orders::getCreateTime, endTime);
         List<Orders> orders = orderService.list(wrapper);
 
-        // 计算总金额
-        BigDecimal totalAmount = orders.stream()
-                .map(Orders::getTotalAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // 如果指定了类别，需要筛选订单明细
+        BigDecimal totalAmount;
+        if (categoryIds != null && !categoryIds.isEmpty()) {
+            // 按类别筛选：只统计指定类别的商品金额
+            totalAmount = BigDecimal.ZERO;
+            for (Orders order : orders) {
+                // 查询该订单的所有明细
+                LambdaQueryWrapper<OrderItem> itemWrapper = new LambdaQueryWrapper<>();
+                itemWrapper.eq(OrderItem::getOrderId, order.getId());
+                List<OrderItem> items = orderItemService.list(itemWrapper);
+
+                // 筛选指定类别的商品
+                for (OrderItem item : items) {
+                    Product product = productService.getById(item.getProductId());
+                    if (product != null && categoryIds.contains(product.getCategoryId())) {
+                        totalAmount = totalAmount.add(item.getSubtotal());
+                    }
+                }
+            }
+        } else {
+            // 不限制类别：统计所有订单金额
+            totalAmount = orders.stream()
+                    .map(Orders::getTotalAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+        }
 
         // 记录关联的订单ID列表（JSON格式），防止后续订单变动导致账单数据不一致
         String orderIds = "[" + orders.stream()
                 .map(o -> String.valueOf(o.getId()))
                 .collect(Collectors.joining(",")) + "]";
+
+        // 记录类别ID列表
+        String categoryIdsStr = categoryIds != null && !categoryIds.isEmpty()
+                ? "[" + categoryIds.stream().map(String::valueOf).collect(Collectors.joining(",")) + "]"
+                : null;
 
         // 创建账单
         MonthlyBill bill = new MonthlyBill();
@@ -67,6 +94,7 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
         bill.setTotalAmount(totalAmount);
         bill.setPaidAmount(BigDecimal.ZERO);
         bill.setOrderIds(orderIds);
+        bill.setCategoryIds(categoryIdsStr);
         // 根据客户类型设置状态：月结客户为"未结算"，其他客户为"已结算"
         bill.setStatus(customer.getIsMonthly() == 1 ? "未结清" : "已结清");
         save(bill);

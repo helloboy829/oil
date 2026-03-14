@@ -35,8 +35,9 @@ public class MonthlyBillController {
      */
     @PostMapping("/generate")
     public Result<MonthlyBill> generate(@RequestParam Long customerId,
-                                         @RequestParam String billMonth) {
-        MonthlyBill bill = monthlyBillService.generateMonthlyBill(customerId, billMonth);
+                                         @RequestParam String billMonth,
+                                         @RequestParam(required = false) java.util.List<Long> categoryIds) {
+        MonthlyBill bill = monthlyBillService.generateMonthlyBill(customerId, billMonth, categoryIds);
         return Result.success(bill);
     }
 

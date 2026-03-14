@@ -8,19 +8,37 @@
           <el-icon><Search /></el-icon>
           扫不出来？手动搜索商品
         </div>
+        <!-- 第一步：选择类别 -->
+        <el-select
+          v-model="selectedCategory"
+          placeholder="1. 先选择类别..."
+          size="large"
+          style="width: 100%; margin-bottom: 12px;"
+          clearable
+          @change="handleCategoryChange"
+        >
+          <el-option
+            v-for="category in categoryList"
+            :key="category.id"
+            :label="category.name"
+            :value="category.id"
+          />
+        </el-select>
+        <!-- 第二步：选择商品 -->
         <el-select
           v-model="selectedProduct"
           filterable
           remote
           reserve-keyword
-          placeholder="输入商品名称搜索..."
+          placeholder="2. 再选择商品..."
           :remote-method="searchProductRemote"
           :loading="productLoading"
+          :disabled="!selectedCategory"
           size="large"
           style="width: 100%;"
           clearable
           @change="handleProductSelect"
-          @focus="loadAllProducts"
+          @focus="loadProductsByCategory"
         >
           <el-option
             v-for="product in productList"
@@ -247,15 +265,19 @@
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { BrowserMultiFormatReader } from '@zxing/library'
-import { productApi, customerApi } from '@/api/index'
+import { productApi, customerApi, categoryApi } from '@/api/index'
 import { orderApi } from '@/api/order'
 
 // 扫码相关
 const scanning = ref(false)
 let codeReader = null
+
+// 分类相关
+const categoryList = ref([])
+const selectedCategory = ref(null)
 
 // 搜索相关
 const searchKeyword = ref('')
@@ -460,10 +482,32 @@ const handleFileUpload = async (file) => {
   }
 }
 
-// 加载所有商品（点击搜索框时）
-const loadAllProducts = async () => {
+// 加载分类列表
+const loadCategories = async () => {
+  try {
+    const res = await categoryApi.getList()
+    categoryList.value = res.data
+  } catch (err) {
+    console.error('加载分类列表失败', err)
+  }
+}
+
+// 类别改变时
+const handleCategoryChange = () => {
+  // 清空商品选择和列表
+  selectedProduct.value = null
+  productList.value = []
+  allProducts.value = []
+}
+
+// 加载指定类别的商品（点击商品搜索框时）
+const loadProductsByCategory = async () => {
+  if (!selectedCategory.value) {
+    return
+  }
+
   if (allProducts.value.length > 0) {
-    // 如果已经缓存了，直接使用
+    // 如果已经缓存了该类别的商品，直接使用
     productList.value = allProducts.value
     return
   }
@@ -472,7 +516,8 @@ const loadAllProducts = async () => {
     productLoading.value = true
     const res = await productApi.getPage({
       current: 1,
-      size: 1000 // 获取所有商品
+      size: 1000,
+      categoryId: selectedCategory.value
     })
     allProducts.value = res.data?.records || []
     productList.value = allProducts.value
@@ -485,8 +530,12 @@ const loadAllProducts = async () => {
 
 // 远程搜索商品（输入时模糊匹配）
 const searchProductRemote = async (query) => {
+  if (!selectedCategory.value) {
+    return
+  }
+
   if (!query) {
-    // 如果没有输入，显示所有商品
+    // 如果没有输入，显示该类别的所有商品
     productList.value = allProducts.value
     return
   }
@@ -784,6 +833,11 @@ const submitOrder = async () => {
     submitting.value = false
   }
 }
+
+// 组件挂载时加载分类列表
+onMounted(() => {
+  loadCategories()
+})
 
 // 组件卸载时停止扫码
 onUnmounted(() => {

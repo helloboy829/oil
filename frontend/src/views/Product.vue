@@ -24,6 +24,16 @@
             />
           </el-select>
         </el-form-item>
+        <el-form-item label="商品类别">
+          <el-select v-model="searchForm.categoryId" placeholder="全部类别" clearable style="width: 150px;">
+            <el-option
+              v-for="category in categoryList"
+              :key="category.id"
+              :label="category.name"
+              :value="category.id"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="loadData" icon="Search">查询</el-button>
           <el-button @click="handleReset" icon="Refresh">重置</el-button>
@@ -54,6 +64,7 @@
               </template>
               <div class="col-settings">
                 <div class="col-settings-title">可选显示列</div>
+                <el-checkbox v-model="visibleCols.category" label="类别" />
                 <el-checkbox v-model="visibleCols.unit" label="单位" />
                 <el-checkbox v-model="visibleCols.stock" label="数量" />
                 <el-checkbox v-model="visibleCols.remark" label="备注" />
@@ -122,6 +133,14 @@
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column prop="id" label="编号" width="80" align="center" />
         <el-table-column prop="name" label="商品名称" min-width="150" show-overflow-tooltip />
+        <el-table-column v-if="visibleCols.category" label="类别" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.categoryId" size="small">
+              {{ categoryList.find(c => c.id === row.categoryId)?.name || '-' }}
+            </el-tag>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
         <el-table-column v-if="visibleCols.unit" prop="unit" label="单位" width="80" align="center" />
         <el-table-column v-if="visibleCols.stock" prop="stock" label="数量" width="100" align="center">
           <template #default="{ row }">
@@ -192,6 +211,16 @@
         <el-form-item label="商品名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入商品名称" />
         </el-form-item>
+        <el-form-item label="商品类别" prop="categoryId">
+          <el-select v-model="form.categoryId" placeholder="请选择类别" style="width: 100%;">
+            <el-option
+              v-for="category in categoryList"
+              :key="category.id"
+              :label="category.name"
+              :value="category.id"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="单位" prop="unit">
           <el-select v-model="form.unit" placeholder="请选择单位" style="width: 100%;">
             <el-option label="只" value="只" />
@@ -261,7 +290,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { productApi } from '@/api/index'
+import { productApi, categoryApi } from '@/api/index'
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
 
@@ -281,10 +310,13 @@ const formRules = {
   ]
 }
 
-const searchForm = reactive({ name: '' })
+const searchForm = reactive({ name: '', categoryId: null })
 
 // 列可见性控制
-const visibleCols = reactive({ unit: true, stock: true, remark: true })
+const visibleCols = reactive({ unit: true, stock: true, remark: true, category: true })
+
+// 分类列表
+const categoryList = ref([])
 
 // 搜索下拉列表
 const productNameList = ref([])
@@ -304,7 +336,8 @@ const form = reactive({
   unit: '只',  // 默认单位改为"只"
   price: 0,
   stock: 0,
-  cost: null
+  cost: null,
+  categoryId: null
 })
 
 // 二维码相关
@@ -318,10 +351,21 @@ const loadData = async () => {
     current: pagination.current,
     size: pagination.size,
     name: searchForm.name,
+    categoryId: searchForm.categoryId,
     _t: Date.now() // 添加时间戳避免缓存
   })
   tableData.value = res.data.records
   pagination.total = res.data.total
+}
+
+// 加载分类列表
+const loadCategories = async () => {
+  try {
+    const res = await categoryApi.getList()
+    categoryList.value = res.data
+  } catch (err) {
+    console.error('加载分类列表失败', err)
+  }
 }
 
 // 加载所有商品名称（点击搜索框时）
@@ -361,12 +405,13 @@ const searchProductName = async (query) => {
 
 const handleReset = () => {
   searchForm.name = ''
+  searchForm.categoryId = null
   loadData()
 }
 
 const handleAdd = () => {
   dialogTitle.value = '新增商品'
-  Object.assign(form, { id: null, name: '', code: '', spec: '', unit: '只', price: 0, stock: 0, cost: null })
+  Object.assign(form, { id: null, name: '', code: '', spec: '', unit: '只', price: 0, stock: 0, cost: null, categoryId: null })
   dialogVisible.value = true
 }
 
@@ -537,6 +582,7 @@ const handleDownloadQrCode = () => {
 
 onMounted(() => {
   loadData()
+  loadCategories()
 })
 </script>
 

@@ -66,3 +66,23 @@ export const customerApi = {
     return request.delete('/customer/batch', { data: ids, params: { force } })
   }
 }
+
+// 商品分类相关接口
+export const categoryApi = {
+  // 获取所有分类列表
+  getList() {
+    return request.get('/category/list')
+  },
+  // 新增分类
+  add(data) {
+    return request.post('/category', data)
+  },
+  // 更新分类
+  update(data) {
+    return request.put('/category', data)
+  },
+  // 删除分类
+  delete(id) {
+    return request.delete(`/category/${id}`)
+  }
+}

@@ -8,8 +8,9 @@ import javax.servlet.http.HttpServletResponse;
 public interface MonthlyBillService extends IService<MonthlyBill> {
     /**
      * 生成月结账单
+     * @param categoryIds 商品类别ID列表，为空或null表示不限制类别
      */
-    MonthlyBill generateMonthlyBill(Long customerId, String billMonth);
+    MonthlyBill generateMonthlyBill(Long customerId, String billMonth, java.util.List<Long> categoryIds);
 
     /**
      * 结算月结账单

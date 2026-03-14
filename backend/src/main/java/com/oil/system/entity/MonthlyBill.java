@@ -33,6 +33,9 @@ public class MonthlyBill {
     // 生成账单时关联的订单ID列表，JSON格式，如 "[1,2,3]"
     private String orderIds;
 
+    // 生成账单时筛选的类别ID列表，JSON格式，如 "[1,2,3]"，null表示不限制类别
+    private String categoryIds;
+
     @TableLogic
     private Integer deleted;
 

@@ -22,10 +22,14 @@ public class ProductController {
     @GetMapping("/page")
     public Result<Page<Product>> page(@RequestParam(defaultValue = "1") Integer current,
                                        @RequestParam(defaultValue = "10") Integer size,
-                                       @RequestParam(required = false) String name) {
+                                       @RequestParam(required = false) String name,
+                                       @RequestParam(required = false) Long categoryId) {
         LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<>();
         if (name != null && !name.isEmpty()) {
             wrapper.like(Product::getName, name);
+        }
+        if (categoryId != null) {
+            wrapper.eq(Product::getCategoryId, categoryId);
         }
         // 按创建时间倒序排列，新增的商品显示在最前面
         wrapper.orderByDesc(Product::getCreateTime);

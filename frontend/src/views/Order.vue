@@ -318,7 +318,6 @@
             <el-table-column type="index" label="序号" width="60" align="center" />
             <el-table-column prop="productName" label="商品名称" min-width="150" show-overflow-tooltip />
             <el-table-column prop="productCode" label="商品编码" width="140" align="center" />
-            <el-table-column prop="productSpec" label="规格" width="100" align="center" />
             <el-table-column prop="unit" label="单位" width="80" align="center" />
             <el-table-column prop="price" label="单价" width="100" align="right">
               <template #default="{ row }">

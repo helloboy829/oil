@@ -169,6 +169,20 @@
             style="width: 100%;"
           />
         </el-form-item>
+        <el-form-item label="商品类别">
+          <el-checkbox-group v-model="form.categoryIds">
+            <el-checkbox
+              v-for="category in categoryList"
+              :key="category.id"
+              :label="category.id"
+            >
+              {{ category.name }}
+            </el-checkbox>
+          </el-checkbox-group>
+          <div style="font-size: 12px; color: #999; margin-top: 4px;">
+            不选择表示统计所有类别
+          </div>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -182,7 +196,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { monthlyBillApi } from '@/api/order'
-import { customerApi } from '@/api/index'
+import { customerApi, categoryApi } from '@/api/index'
 import { formatDateTime } from '@/utils/format'
 
 // 表单引用
@@ -203,9 +217,11 @@ const pagination = reactive({ current: 1, size: 10, total: 0 })
 const dialogVisible = ref(false)
 const customers = ref([])
 const selectedRows = ref([])
+const categoryList = ref([])
 const form = reactive({
   customerId: null,
-  billMonth: ''
+  billMonth: '',
+  categoryIds: []
 })
 
 // 格式化表格数据中的时间
@@ -234,8 +250,17 @@ const loadCustomers = async () => {
   customers.value = res.data.records
 }
 
+const loadCategories = async () => {
+  try {
+    const res = await categoryApi.getList()
+    categoryList.value = res.data
+  } catch (err) {
+    console.error('加载分类列表失败', err)
+  }
+}
+
 const handleGenerate = () => {
-  Object.assign(form, { customerId: null, billMonth: '' })
+  Object.assign(form, { customerId: null, billMonth: '', categoryIds: [] })
   dialogVisible.value = true
 }
 
@@ -252,7 +277,8 @@ const handleSubmit = async () => {
 
   await monthlyBillApi.generate({
     customerId: form.customerId,
-    billMonth: form.billMonth
+    billMonth: form.billMonth,
+    categoryIds: form.categoryIds.length > 0 ? form.categoryIds : null
   })
   ElMessage.success('生成成功')
   dialogVisible.value = false
@@ -336,6 +362,7 @@ const disabledDate = (time) => {
 onMounted(() => {
   loadData()
   loadCustomers()
+  loadCategories()
 })
 </script>
 

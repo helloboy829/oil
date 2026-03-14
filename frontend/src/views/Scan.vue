@@ -8,55 +8,29 @@
           <el-icon><Search /></el-icon>
           扫不出来？手动搜索商品
         </div>
-        <!-- 第一步：选择类别 -->
-        <el-select
-          v-model="selectedCategory"
-          placeholder="1. 先选择类别..."
-          size="large"
-          style="width: 100%; margin-bottom: 12px;"
-          clearable
-          @change="handleCategoryChange"
-        >
-          <el-option
-            v-for="category in categoryList"
-            :key="category.id"
-            :label="category.name"
-            :value="category.id"
-          />
-        </el-select>
-        <!-- 第二步：选择商品 -->
-        <el-select
-          v-model="selectedProduct"
-          filterable
-          remote
-          reserve-keyword
-          placeholder="2. 再选择商品..."
-          :remote-method="searchProductRemote"
-          :loading="productLoading"
-          :disabled="!selectedCategory"
+        <!-- 级联选择：先选类别，再选商品 -->
+        <el-cascader
+          v-model="selectedProductPath"
+          :options="cascaderOptions"
+          :props="cascaderProps"
+          placeholder="选择类别和商品..."
           size="large"
           style="width: 100%;"
+          filterable
           clearable
-          @change="handleProductSelect"
-          @focus="loadProductsByCategory"
+          @change="handleCascaderChange"
         >
-          <el-option
-            v-for="product in productList"
-            :key="product.id"
-            :label="product.name"
-            :value="product.id"
-          >
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span>{{ product.name }}</span>
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <span style="color: #f56c6c; font-weight: bold;">¥{{ product.price }}</span>
-                <el-tag size="small" :type="product.stock > 10 ? 'success' : 'warning'">
-                  库存: {{ product.stock }}
-                </el-tag>
-              </div>
-            </div>
-          </el-option>
-        </el-select>
+          <template #default="{ node, data }">
+            <span>{{ data.label }}</span>
+            <span v-if="!node.isLeaf" style="margin-left: 8px; color: #999;">({{ data.children?.length || 0 }})</span>
+            <span v-else style="margin-left: auto; display: flex; gap: 8px; align-items: center;">
+              <span style="color: #f56c6c; font-weight: bold;">¥{{ data.price }}</span>
+              <el-tag size="small" :type="data.stock > 10 ? 'success' : 'warning'">
+                库存: {{ data.stock }}
+              </el-tag>
+            </span>
+          </template>
+        </el-cascader>
       </div>
 
       <!-- 扫码时显示视频窗口 -->
@@ -277,15 +251,19 @@ let codeReader = null
 
 // 分类相关
 const categoryList = ref([])
-const selectedCategory = ref(null)
+const selectedProductPath = ref([])
+const cascaderOptions = ref([])
+const cascaderProps = {
+  value: 'value',
+  label: 'label',
+  children: 'children',
+  expandTrigger: 'hover'
+}
 
 // 搜索相关
 const searchKeyword = ref('')
 const searchResults = ref([])
-const selectedProduct = ref(null)
-const productList = ref([])
 const productLoading = ref(false)
-const allProducts = ref([]) // 缓存所有商品
 
 // 购物车
 const cart = ref([])
@@ -482,68 +460,60 @@ const handleFileUpload = async (file) => {
   }
 }
 
-// 加载分类列表
+// 加载分类列表并构建级联选择器数据
 const loadCategories = async () => {
   try {
-    const res = await categoryApi.getList()
-    categoryList.value = res.data
+    const categoryRes = await categoryApi.getList()
+    categoryList.value = categoryRes.data
+
+    // 加载所有商品
+    const productRes = await productApi.getPage({
+      current: 1,
+      size: 1000
+    })
+    const allProducts = productRes.data?.records || []
+
+    // 构建级联选择器数据结构
+    cascaderOptions.value = categoryList.value.map(category => ({
+      value: category.id,
+      label: category.name,
+      children: allProducts
+        .filter(p => p.categoryId === category.id)
+        .map(product => ({
+          value: product.id,
+          label: product.name,
+          price: product.price,
+          stock: product.stock,
+          product: product // 保存完整商品信息
+        }))
+    }))
   } catch (err) {
     console.error('加载分类列表失败', err)
   }
 }
 
-// 类别改变时
-const handleCategoryChange = () => {
-  // 清空商品选择和列表
-  selectedProduct.value = null
-  productList.value = []
-  allProducts.value = []
-}
-
-// 加载指定类别的商品（点击商品搜索框时）
-const loadProductsByCategory = async () => {
-  if (!selectedCategory.value) {
+// 级联选择器改变时
+const handleCascaderChange = (value) => {
+  if (!value || value.length < 2) {
     return
   }
 
-  if (allProducts.value.length > 0) {
-    // 如果已经缓存了该类别的商品，直接使用
-    productList.value = allProducts.value
-    return
-  }
+  const [categoryId, productId] = value
 
-  try {
-    productLoading.value = true
-    const res = await productApi.getPage({
-      current: 1,
-      size: 1000,
-      categoryId: selectedCategory.value
-    })
-    allProducts.value = res.data?.records || []
-    productList.value = allProducts.value
-  } catch (err) {
-    ElMessage.error('加载商品列表失败')
-  } finally {
-    productLoading.value = false
-  }
-}
+  // 从级联选择器中找到选中的商品
+  const category = cascaderOptions.value.find(c => c.value === categoryId)
+  if (!category) return
 
-// 远程搜索商品（输入时模糊匹配）
-const searchProductRemote = async (query) => {
-  if (!selectedCategory.value) {
-    return
-  }
+  const productNode = category.children.find(p => p.value === productId)
+  if (!productNode) return
 
-  if (!query) {
-    // 如果没有输入，显示该类别的所有商品
-    productList.value = allProducts.value
-    return
-  }
+  const product = productNode.product
 
-  // 从缓存中模糊匹配
-  productList.value = allProducts.value.filter(product =>
-    product.name.toLowerCase().includes(query.toLowerCase())
-  )
+  // 添加到购物车
+  addToCart(product)
+
+  // 清空选择
+  selectedProductPath.value = []
 }
 
 // 选择商品后添加到购物车

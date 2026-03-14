@@ -24,16 +24,18 @@ ON DUPLICATE KEY UPDATE name=name;
 
 -- 3. 为商品表添加分类ID字段（如果不存在）
 ALTER TABLE `product`
-ADD COLUMN IF NOT EXISTS `category_id` BIGINT COMMENT '分类ID' AFTER `id`,
-ADD INDEX IF NOT EXISTS `idx_category_id` (`category_id`);
+ADD COLUMN `category_id` BIGINT COMMENT '分类ID' AFTER `id`;
+
+ALTER TABLE `product`
+ADD INDEX `idx_category_id` (`category_id`);
 
 -- 4. 为商品表添加成本字段（如果不存在）
 ALTER TABLE `product`
-ADD COLUMN IF NOT EXISTS `cost` DECIMAL(10,2) COMMENT '成本价' AFTER `price`;
+ADD COLUMN `cost` DECIMAL(10,2) COMMENT '成本价' AFTER `price`;
 
 -- 5. 为月结账单表添加类别ID字段（如果不存在）
 ALTER TABLE `monthly_bill`
-ADD COLUMN IF NOT EXISTS `category_ids` VARCHAR(500) COMMENT '筛选的类别ID列表（JSON格式）' AFTER `order_ids`;
+ADD COLUMN `category_ids` VARCHAR(500) COMMENT '筛选的类别ID列表（JSON格式）' AFTER `order_ids`;
 
 -- 6. 更新现有商品的默认分类为"蓄电池"
 UPDATE `product`

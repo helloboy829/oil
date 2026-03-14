@@ -125,9 +125,9 @@
       <el-table :data="tableData" class="modern-table desktop-table-view" @row-click="handleRowClick" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column prop="id" label="ID" width="80" align="center" />
-        <el-table-column prop="name" label="商品名称" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="code" label="商品编码" min-width="150" />
-        <el-table-column v-if="visibleCols.spec" prop="spec" label="规格型号" min-width="120" />
+        <el-table-column prop="name" label="商品名称" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="code" label="商品编码" width="150" />
+        <el-table-column v-if="visibleCols.spec" prop="spec" label="规格型号" width="140" />
         <el-table-column v-if="visibleCols.unit" prop="unit" label="单位" width="80" align="center" />
         <el-table-column prop="price" label="单价" width="120" align="right">
           <template #default="{ row }">

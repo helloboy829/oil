@@ -181,6 +181,7 @@
         </el-form-item>
         <el-form-item label="支付方式">
           <el-select v-model="form.paymentType" placeholder="请选择支付方式" style="width: 100%;">
+            <el-option label="未知" value="未知" />
             <el-option label="现金" value="现金" />
             <el-option label="微信" value="微信" />
             <el-option label="支付宝" value="支付宝" />
@@ -686,6 +687,7 @@ const getRowClass = ({ row }) => {
 
 const getPaymentTypeTag = (type) => {
   const map = {
+    '未知': 'info',
     '现金': 'success',
     '微信': 'success',
     '支付宝': 'primary',

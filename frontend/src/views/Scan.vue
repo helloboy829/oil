@@ -197,6 +197,7 @@
         <!-- 支付方式 -->
         <el-form-item label="支付方式" prop="paymentType">
           <el-radio-group v-model="orderForm.paymentType" size="large">
+            <el-radio-button value="未知">未知</el-radio-button>
             <el-radio-button value="现金">现金</el-radio-button>
             <el-radio-button value="微信">微信</el-radio-button>
             <el-radio-button value="支付宝">支付宝</el-radio-button>
@@ -280,7 +281,7 @@ const isMonthlyCustomer = ref(false)
 const orderFormRef = ref(null)
 const orderForm = ref({
   customerName: '',
-  paymentType: '',
+  paymentType: '未知',
   remark: ''
 })
 
@@ -693,7 +694,7 @@ const handleCustomerChange = (customerName) => {
     } else {
       isMonthlyCustomer.value = false
       if (orderForm.value.paymentType === '月结') {
-        orderForm.value.paymentType = ''
+        orderForm.value.paymentType = '未知'
       }
     }
   } else {
@@ -708,7 +709,7 @@ const handleMonthlyChange = (checked) => {
     orderForm.value.paymentType = '月结'
   } else {
     if (orderForm.value.paymentType === '月结') {
-      orderForm.value.paymentType = ''
+      orderForm.value.paymentType = '未知'
     }
   }
 }
@@ -771,7 +772,7 @@ const submitOrder = async () => {
     cart.value = []
     orderForm.value = {
       customerName: '',
-      paymentType: '',
+      paymentType: '未知',
       remark: ''
     }
     isMonthlyCustomer.value = false

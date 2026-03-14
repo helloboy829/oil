@@ -19,18 +19,7 @@
           filterable
           clearable
           @change="handleCascaderChange"
-        >
-          <template #default="{ node, data }">
-            <span>{{ data.label }}</span>
-            <span v-if="!node.isLeaf" style="margin-left: 8px; color: #999;">({{ data.children?.length || 0 }})</span>
-            <span v-else style="margin-left: auto; display: flex; gap: 8px; align-items: center;">
-              <span style="color: #f56c6c; font-weight: bold;">¥{{ data.price }}</span>
-              <el-tag size="small" :type="data.stock > 10 ? 'success' : 'warning'">
-                库存: {{ data.stock }}
-              </el-tag>
-            </span>
-          </template>
-        </el-cascader>
+        />
       </div>
 
       <!-- 扫码时显示视频窗口 -->
@@ -510,7 +499,8 @@ const handleCascaderChange = (value) => {
   const product = productNode.product
 
   // 添加到购物车
-  addToCart(product)
+  addProduct(product)
+  ElMessage.success(`已添加：${product.name}`)
 
   // 清空选择
   selectedProductPath.value = []

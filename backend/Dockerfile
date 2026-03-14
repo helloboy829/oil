@@ -17,11 +17,8 @@ WORKDIR /app
 # 从构建阶段复制jar包
 COPY --from=build /build/target/*.jar app.jar
 
-# 创建 qrcodes 目录并安装 curl（用于健康检查）
-RUN mkdir -p /app/qrcodes && \
-    apt-get update && \
-    apt-get install -y curl && \
-    rm -rf /var/lib/apt/lists/*
+# 创建 qrcodes 目录
+RUN mkdir -p /app/qrcodes
 
 # 暴露端口
 EXPOSE 8080

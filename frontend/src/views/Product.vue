@@ -125,10 +125,28 @@
       <el-table :data="tableData" class="modern-table desktop-table-view" @row-click="handleRowClick" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column prop="id" label="ID" width="80" align="center" />
-        <el-table-column prop="name" label="商品名称" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="code" label="商品编码" width="150" />
-        <el-table-column v-if="visibleCols.spec" prop="spec" label="规格型号" width="140" />
-        <el-table-column v-if="visibleCols.unit" prop="unit" label="单位" width="80" align="center" />
+        <el-table-column prop="name" label="商品名称" width="200" show-overflow-tooltip />
+        <el-table-column
+          prop="code"
+          label="商品编码"
+          :width="lastVisibleCol === 'code' ? undefined : 150"
+          :min-width="lastVisibleCol === 'code' ? 150 : undefined"
+        />
+        <el-table-column
+          v-if="visibleCols.spec"
+          prop="spec"
+          label="规格型号"
+          :width="lastVisibleCol === 'spec' ? undefined : 140"
+          :min-width="lastVisibleCol === 'spec' ? 140 : undefined"
+        />
+        <el-table-column
+          v-if="visibleCols.unit"
+          prop="unit"
+          label="单位"
+          :width="lastVisibleCol === 'unit' ? undefined : 80"
+          :min-width="lastVisibleCol === 'unit' ? 80 : undefined"
+          align="center"
+        />
         <el-table-column prop="price" label="单价" width="120" align="right">
           <template #default="{ row }">
             <span class="price-text">¥{{ row.price?.toFixed(2) || '0.00' }}</span>
@@ -158,7 +176,14 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="stock" label="库存" v-if="visibleCols.stock" width="100" align="center">
+        <el-table-column
+          prop="stock"
+          label="库存"
+          v-if="visibleCols.stock"
+          :width="lastVisibleCol === 'stock' ? undefined : 100"
+          :min-width="lastVisibleCol === 'stock' ? 100 : undefined"
+          align="center"
+        >
           <template #default="{ row }">
             <el-tag :type="row.stock > 10 ? 'success' : row.stock > 0 ? 'warning' : 'danger'" size="small">
               {{ row.stock }}
@@ -284,6 +309,14 @@ const searchForm = reactive({ name: '' })
 
 // 列可见性控制
 const visibleCols = reactive({ spec: true, unit: true, stock: true })
+
+// 计算最后一个可见列，用于自动扩展填充空白
+const lastVisibleCol = computed(() => {
+  if (visibleCols.stock) return 'stock'
+  if (visibleCols.unit) return 'unit'
+  if (visibleCols.spec) return 'spec'
+  return 'code'
+})
 
 // 搜索下拉列表
 const productNameList = ref([])

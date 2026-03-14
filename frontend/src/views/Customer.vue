@@ -98,10 +98,35 @@
       <el-table :data="tableData" class="modern-table desktop-table-view" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column prop="id" label="ID" width="80" align="center" />
-        <el-table-column prop="name" label="客户姓名" min-width="150" show-overflow-tooltip />
-        <el-table-column v-if="visibleCols.phone" prop="phone" label="联系电话" width="140" />
-        <el-table-column v-if="visibleCols.address" prop="address" label="地址" width="200" show-overflow-tooltip />
-        <el-table-column v-if="visibleCols.isMonthly" label="是否月结" width="110" align="center">
+        <el-table-column
+          prop="name"
+          label="客户姓名"
+          :width="lastVisibleCol === 'name' ? undefined : 150"
+          :min-width="lastVisibleCol === 'name' ? 150 : undefined"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          v-if="visibleCols.phone"
+          prop="phone"
+          label="联系电话"
+          :width="lastVisibleCol === 'phone' ? undefined : 140"
+          :min-width="lastVisibleCol === 'phone' ? 140 : undefined"
+        />
+        <el-table-column
+          v-if="visibleCols.address"
+          prop="address"
+          label="地址"
+          :width="lastVisibleCol === 'address' ? undefined : 200"
+          :min-width="lastVisibleCol === 'address' ? 200 : undefined"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          v-if="visibleCols.isMonthly"
+          label="是否月结"
+          :width="lastVisibleCol === 'isMonthly' ? undefined : 110"
+          :min-width="lastVisibleCol === 'isMonthly' ? 110 : undefined"
+          align="center"
+        >
           <template #default="{ row }">
             <el-tag :type="row.isMonthly ? 'success' : 'info'" size="small">
               {{ row.isMonthly ? '月结' : '普通' }}
@@ -176,7 +201,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { customerApi } from '@/api/index'
 
@@ -197,6 +222,14 @@ const searchForm = reactive({
 
 // 列可见性控制（默认隐藏联系电话和地址）
 const visibleCols = reactive({ phone: false, address: false, isMonthly: true })
+
+// 计算最后一个可见列，用于自动扩展填充空白
+const lastVisibleCol = computed(() => {
+  if (visibleCols.isMonthly) return 'isMonthly'
+  if (visibleCols.address) return 'address'
+  if (visibleCols.phone) return 'phone'
+  return 'name'
+})
 
 // 搜索下拉列表
 const customerNameList = ref([])

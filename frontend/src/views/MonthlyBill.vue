@@ -73,6 +73,7 @@
           </div>
 
           <div class="bill-card-actions">
+            <el-button type="primary" size="small" @click="handleView(item)" icon="View">预览</el-button>
             <el-button type="success" size="small" @click="handleExport(item)" icon="Download">导出Excel</el-button>
             <el-button type="danger" size="small" @click="handleDelete(item)" icon="Delete">删除</el-button>
           </div>
@@ -118,8 +119,11 @@
             </el-button>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right" align="center">
+        <el-table-column label="操作" width="250" fixed="right" align="center">
           <template #default="{ row }">
+            <el-button type="primary" size="small" @click="handleView(row)" icon="View">
+              预览
+            </el-button>
             <el-button type="success" size="small" @click="handleExport(row)" icon="Download">
               导出
             </el-button>
@@ -189,6 +193,95 @@
         <el-button type="primary" @click="handleSubmit">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 账单预览对话框 -->
+    <el-dialog v-model="detailVisible" title="账单预览" width="900px" class="modern-dialog detail-dialog" lock-scroll>
+      <div class="bill-detail" v-if="currentBill">
+        <!-- 基本信息 -->
+        <div class="detail-section">
+          <h3 class="section-title">
+            <el-icon><InfoFilled /></el-icon>
+            <span>账单信息</span>
+          </h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">账单编号:</span>
+              <span class="value bill-no">{{ currentBill.bill?.billNo }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">客户姓名:</span>
+              <span class="value">{{ currentBill.bill?.customerName }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">账单月份:</span>
+              <span class="value">{{ currentBill.bill?.billMonth }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">账单金额:</span>
+              <span class="value amount-highlight">¥{{ currentBill.bill?.totalAmount?.toFixed(2) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">已付金额:</span>
+              <span class="value paid-text">¥{{ currentBill.bill?.paidAmount?.toFixed(2) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">账单状态:</span>
+              <el-tag :type="currentBill.bill?.status === '已结清' ? 'success' : 'warning'" size="small">
+                {{ currentBill.bill?.status }}
+              </el-tag>
+            </div>
+            <div class="info-item">
+              <span class="label">生成时间:</span>
+              <span class="value">{{ currentBill.bill?.createTime }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 商品明细 -->
+        <div class="detail-section">
+          <h3 class="section-title">
+            <el-icon><Goods /></el-icon>
+            <span>商品明细</span>
+          </h3>
+          <el-table :data="currentBill.items" border class="detail-table">
+            <el-table-column type="index" label="序号" width="60" align="center" />
+            <el-table-column prop="orderDate" label="日期" width="110" align="center" />
+            <el-table-column prop="productName" label="品名" min-width="150" show-overflow-tooltip />
+            <el-table-column prop="productSpec" label="规格" width="100" align="center" />
+            <el-table-column prop="unit" label="单位" width="80" align="center" />
+            <el-table-column prop="quantity" label="数量" width="80" align="center" />
+            <el-table-column prop="price" label="单价" width="100" align="right">
+              <template #default="{ row }">
+                <span class="price-text">¥{{ row.price?.toFixed(2) }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="subtotal" label="金额" width="120" align="right">
+              <template #default="{ row }">
+                <span class="subtotal-text">¥{{ row.subtotal?.toFixed(2) }}</span>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <!-- 合计 -->
+          <div class="bill-summary">
+            <div class="summary-row">
+              <span class="summary-label">商品总数:</span>
+              <span class="summary-value">{{ getTotalQuantity() }} 件</span>
+            </div>
+            <div class="summary-row total-row">
+              <span class="summary-label">账单总额:</span>
+              <span class="summary-value total-amount">¥{{ currentBill.bill?.totalAmount?.toFixed(2) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="detailVisible = false" size="large">关闭</el-button>
+          <el-button type="success" @click="handleExport(currentBill.bill)" size="large" icon="Download">导出Excel</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -215,6 +308,8 @@ const formRules = {
 const tableData = ref([])
 const pagination = reactive({ current: 1, size: 10, total: 0 })
 const dialogVisible = ref(false)
+const detailVisible = ref(false)
+const currentBill = ref(null)
 const customers = ref([])
 const selectedRows = ref([])
 const categoryList = ref([])
@@ -287,6 +382,26 @@ const handleSubmit = async () => {
 
 const handleExport = (row) => {
   window.open(monthlyBillApi.export(row.id))
+}
+
+const handleView = async (row) => {
+  try {
+    const res = await monthlyBillApi.getById(row.id)
+    // 格式化时间
+    if (res.data.bill) {
+      res.data.bill.createTime = formatDateTime(res.data.bill.createTime)
+      res.data.bill.updateTime = formatDateTime(res.data.bill.updateTime)
+    }
+    currentBill.value = res.data
+    detailVisible.value = true
+  } catch (err) {
+    ElMessage.error('获取账单详情失败')
+  }
+}
+
+const getTotalQuantity = () => {
+  if (!currentBill.value?.items) return 0
+  return currentBill.value.items.reduce((sum, item) => sum + item.quantity, 0)
 }
 
 const handleSettle = async (row) => {
@@ -474,6 +589,154 @@ onMounted(() => {
 
 .bill-card-actions .el-button {
   flex: 1;
+}
+
+/* 账单预览样式 */
+.bill-detail {
+  padding: 8px;
+}
+
+.detail-section {
+  margin-bottom: 32px;
+}
+
+.detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  margin: 0 0 20px 0;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main);
+  background: linear-gradient(135deg, var(--primary-light), #f0f0ff);
+  border-left: 4px solid var(--primary-color);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title .el-icon {
+  font-size: 18px;
+  color: var(--primary-color);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px 24px;
+  padding: 16px;
+  background: var(--bg-color);
+  border-radius: var(--radius-md);
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-item .label {
+  color: var(--text-secondary);
+  font-size: 14px;
+  min-width: 80px;
+  font-weight: 500;
+}
+
+.info-item .value {
+  color: var(--text-main);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.amount-highlight {
+  color: var(--primary-color);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.paid-text {
+  color: var(--success-color);
+  font-weight: 600;
+}
+
+.detail-table {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.detail-table :deep(.el-table__header th) {
+  background-color: var(--bg-color);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.detail-table :deep(.el-table__body td) {
+  padding: 12px 0;
+}
+
+.price-text {
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.subtotal-text {
+  color: var(--primary-color);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.bill-summary {
+  margin-top: 16px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f8f9ff, #f0f0ff);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--primary-color);
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.summary-row.total-row {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 2px solid var(--primary-color);
+}
+
+.summary-label {
+  font-size: 15px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.summary-value {
+  font-size: 15px;
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.total-row .summary-label {
+  font-size: 16px;
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.total-row .total-amount {
+  font-size: 22px;
+  color: var(--primary-color);
+  font-weight: 700;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 /* 结算状态按钮样式 */

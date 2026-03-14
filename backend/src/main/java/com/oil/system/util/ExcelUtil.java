@@ -8,7 +8,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.oil.system.entity.MonthlyBill;
 import com.oil.system.entity.OrderItem;
 import com.oil.system.entity.Orders;
+import com.oil.system.entity.Product;
 import com.oil.system.service.OrderItemService;
+import com.oil.system.service.ProductService;
 import com.oil.system.vo.MonthlyBillExcelVO;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
@@ -29,6 +31,8 @@ public class ExcelUtil {
      */
     public static void exportMonthlyBill(MonthlyBill bill, List<Orders> orders,
                                          OrderItemService orderItemService,
+                                         ProductService productService,
+                                         List<Long> categoryIds,
                                          HttpServletResponse response) {
         try {
             // 设置响应头
@@ -41,17 +45,16 @@ public class ExcelUtil {
             Workbook workbook = new XSSFWorkbook();
             Sheet sheet = workbook.createSheet("月结账单");
 
-            // 设置列宽
+            // 设置列宽（按照新格式：序号、日期、品名、规格、单位、数量、单价、金额、备注）
             sheet.setColumnWidth(0, 3000);  // 序号
-            sheet.setColumnWidth(1, 5000);  // 订单日期
-            sheet.setColumnWidth(2, 6000);  // 订单编号
-            sheet.setColumnWidth(3, 6000);  // 商品名称
-            sheet.setColumnWidth(4, 4000);  // 商品编码
-            sheet.setColumnWidth(5, 4000);  // 规格型号
-            sheet.setColumnWidth(6, 3000);  // 单位
-            sheet.setColumnWidth(7, 4000);  // 单价
-            sheet.setColumnWidth(8, 3000);  // 数量
-            sheet.setColumnWidth(9, 4000);  // 小计
+            sheet.setColumnWidth(1, 5000);  // 日期
+            sheet.setColumnWidth(2, 8000);  // 品名（商品名称）
+            sheet.setColumnWidth(3, 5000);  // 规格
+            sheet.setColumnWidth(4, 3000);  // 单位
+            sheet.setColumnWidth(5, 3000);  // 数量
+            sheet.setColumnWidth(6, 4000);  // 单价
+            sheet.setColumnWidth(7, 4000);  // 金额（小计）
+            sheet.setColumnWidth(8, 6000);  // 备注
 
             int rowNum = 0;
 
@@ -67,7 +70,7 @@ public class ExcelUtil {
             Cell titleCell = titleRow.createCell(0);
             titleCell.setCellValue("月结账单");
             titleCell.setCellStyle(titleStyle);
-            sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 9));
+            sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 8));
 
             // 空行
             rowNum++;
@@ -93,19 +96,27 @@ public class ExcelUtil {
                 List<OrderItem> items = orderItemService.list(wrapper);
 
                 for (OrderItem item : items) {
+                    // 如果指定了类别筛选，检查商品是否属于指定类别
+                    if (categoryIds != null && !categoryIds.isEmpty()) {
+                        Product product = productService.getById(item.getProductId());
+                        if (product == null || !categoryIds.contains(product.getCategoryId())) {
+                            continue; // 跳过不符合类别筛选的商品
+                        }
+                    }
+
                     Row dataRow = sheet.createRow(rowNum++);
                     dataRow.setHeight((short) 400);
 
+                    // 新格式：序号、日期、品名、规格、单位、数量、单价、金额、备注
                     createCell(dataRow, 0, String.valueOf(serialNo++), dataStyle);
                     createCell(dataRow, 1, order.getCreateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")), dataStyle);
-                    createCell(dataRow, 2, order.getOrderNo(), dataStyle);
-                    createCell(dataRow, 3, item.getProductName(), dataStyle);
-                    createCell(dataRow, 4, item.getProductCode(), dataStyle);
-                    createCell(dataRow, 5, item.getProductSpec(), dataStyle);
-                    createCell(dataRow, 6, item.getUnit(), dataStyle);
-                    createCell(dataRow, 7, "¥" + item.getPrice().setScale(2, BigDecimal.ROUND_HALF_UP), dataStyle);
-                    createCell(dataRow, 8, String.valueOf(item.getQuantity()), dataStyle);
-                    createCell(dataRow, 9, "¥" + item.getSubtotal().setScale(2, BigDecimal.ROUND_HALF_UP), dataStyle);
+                    createCell(dataRow, 2, item.getProductName(), dataStyle);
+                    createCell(dataRow, 3, item.getProductSpec() != null ? item.getProductSpec() : "", dataStyle);
+                    createCell(dataRow, 4, item.getUnit(), dataStyle);
+                    createCell(dataRow, 5, String.valueOf(item.getQuantity()), dataStyle);
+                    createCell(dataRow, 6, "¥" + item.getPrice().setScale(2, BigDecimal.ROUND_HALF_UP), dataStyle);
+                    createCell(dataRow, 7, "¥" + item.getSubtotal().setScale(2, BigDecimal.ROUND_HALF_UP), dataStyle);
+                    createCell(dataRow, 8, order.getRemark() != null ? order.getRemark() : "", dataStyle);
 
                     totalQuantity += item.getQuantity();
                     actualTotalAmount = actualTotalAmount.add(item.getSubtotal());
@@ -206,13 +217,13 @@ public class ExcelUtil {
         Cell cell1 = row1.createCell(0);
         cell1.setCellValue("账单编号：" + bill.getBillNo());
         cell1.setCellStyle(infoStyle);
-        sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, 4));
+        sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, 3));
 
         // 客户名称
-        Cell cell2 = row1.createCell(5);
+        Cell cell2 = row1.createCell(4);
         cell2.setCellValue("客户名称：" + bill.getCustomerName());
         cell2.setCellStyle(infoStyle);
-        sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 5, 9));
+        sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 4, 8));
 
         // 账单月份
         Row row2 = sheet.createRow(rowNum++);
@@ -220,13 +231,13 @@ public class ExcelUtil {
         Cell cell3 = row2.createCell(0);
         cell3.setCellValue("账单月份：" + bill.getBillMonth());
         cell3.setCellStyle(infoStyle);
-        sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, 4));
+        sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, 3));
 
         // 账单状态
-        Cell cell4 = row2.createCell(5);
+        Cell cell4 = row2.createCell(4);
         cell4.setCellValue("账单状态：" + bill.getStatus());
         cell4.setCellStyle(infoStyle);
-        sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 5, 9));
+        sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 4, 8));
 
         return rowNum;
     }
@@ -238,7 +249,7 @@ public class ExcelUtil {
         Row headerRow = sheet.createRow(rowNum++);
         headerRow.setHeight((short) 450);
 
-        String[] headers = {"序号", "订单日期", "订单编号", "商品名称", "商品编码", "规格型号", "单位", "单价", "数量", "小计"};
+        String[] headers = {"序号", "日期", "品名", "规格", "单位", "数量", "单价", "金额", "备注"};
         for (int i = 0; i < headers.length; i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers[i]);
@@ -268,13 +279,13 @@ public class ExcelUtil {
         Cell cell1 = row1.createCell(0);
         cell1.setCellValue("订单总数：" + orderCount + " 笔");
         cell1.setCellStyle(summaryStyle);
-        sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, 4));
+        sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, 3));
 
         // 商品总数量
-        Cell cell2 = row1.createCell(5);
+        Cell cell2 = row1.createCell(4);
         cell2.setCellValue("商品总数量：" + totalQuantity + " 件");
         cell2.setCellStyle(summaryStyle);
-        sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 5, 9));
+        sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 4, 8));
 
         // 应付总额（使用从明细重新计算的实际金额）
         Row row2 = sheet.createRow(rowNum++);
@@ -282,13 +293,13 @@ public class ExcelUtil {
         Cell cell3 = row2.createCell(0);
         cell3.setCellValue("应付总额：¥" + actualTotalAmount.setScale(2, BigDecimal.ROUND_HALF_UP));
         cell3.setCellStyle(summaryStyle);
-        sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, 4));
+        sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, 3));
 
         // 已付金额
-        Cell cell4 = row2.createCell(5);
+        Cell cell4 = row2.createCell(4);
         cell4.setCellValue("已付金额：¥" + bill.getPaidAmount().setScale(2, BigDecimal.ROUND_HALF_UP));
         cell4.setCellStyle(summaryStyle);
-        sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 5, 9));
+        sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 4, 8));
 
         // 未付金额
         Row row3 = sheet.createRow(rowNum++);
@@ -297,7 +308,7 @@ public class ExcelUtil {
         Cell cell5 = row3.createCell(0);
         cell5.setCellValue("未付金额：¥" + unpaidAmount.setScale(2, BigDecimal.ROUND_HALF_UP));
         cell5.setCellStyle(summaryStyle);
-        sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, 4));
+        sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, 3));
 
         return rowNum;
     }

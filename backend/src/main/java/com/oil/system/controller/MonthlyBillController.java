@@ -59,6 +59,14 @@ public class MonthlyBillController {
     }
 
     /**
+     * 获取账单详情
+     */
+    @GetMapping("/{id}")
+    public Result<java.util.Map<String, Object>> getDetail(@PathVariable Long id) {
+        return Result.success(monthlyBillService.getBillDetail(id));
+    }
+
+    /**
      * 删除月结账单
      */
     @DeleteMapping("/{id}")

@@ -42,6 +42,10 @@ export const monthlyBillApi = {
   settle(id) {
     return request.put(`/monthly-bill/settle/${id}`)
   },
+  // 获取账单详情
+  getById(id) {
+    return request.get(`/monthly-bill/${id}`)
+  },
   // 导出月结账单
   export(id) {
     return `/api/monthly-bill/export/${id}`

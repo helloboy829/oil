@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.oil.system.entity.MonthlyBill;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.Map;
 
 public interface MonthlyBillService extends IService<MonthlyBill> {
     /**
@@ -21,4 +22,9 @@ public interface MonthlyBillService extends IService<MonthlyBill> {
      * 导出月结账单为Excel
      */
     void exportToExcel(Long billId, HttpServletResponse response);
+
+    /**
+     * 获取账单详情（包含订单明细）
+     */
+    Map<String, Object> getBillDetail(Long billId);
 }

@@ -16,7 +16,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -157,8 +160,93 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
             orders = orderService.list(wrapper);
         }
 
-        // 导出Excel
-        ExcelUtil.exportMonthlyBill(bill, orders, orderItemService, response);
+        // 解析类别ID列表
+        List<Long> categoryIds = null;
+        if (bill.getCategoryIds() != null && !bill.getCategoryIds().equals("[]") && !bill.getCategoryIds().isEmpty()) {
+            String ids = bill.getCategoryIds().replaceAll("[\\[\\]\\s]", "");
+            categoryIds = java.util.Arrays.stream(ids.split(","))
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+        }
+
+        // 导出Excel（传入类别ID列表用于筛选）
+        ExcelUtil.exportMonthlyBill(bill, orders, orderItemService, productService, categoryIds, response);
+    }
+
+    @Override
+    public Map<String, Object> getBillDetail(Long billId) {
+        MonthlyBill bill = getById(billId);
+        if (bill == null) {
+            throw new RuntimeException("账单不存在");
+        }
+
+        // 查询账单对应的订单
+        List<Orders> orders;
+        if (bill.getOrderIds() != null && !bill.getOrderIds().equals("[]") && !bill.getOrderIds().isEmpty()) {
+            String ids = bill.getOrderIds().replaceAll("[\\[\\]\\s]", "");
+            List<Long> idList = java.util.Arrays.stream(ids.split(","))
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+            LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
+            wrapper.in(Orders::getId, idList);
+            orders = orderService.list(wrapper);
+        } else {
+            String billMonth = bill.getBillMonth();
+            YearMonth yearMonth = YearMonth.parse(billMonth);
+            int lastDay = yearMonth.lengthOfMonth();
+            String startTime = billMonth + "-01 00:00:00";
+            String endTime = billMonth + "-" + String.format("%02d", lastDay) + " 23:59:59";
+            LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(Orders::getCustomerId, bill.getCustomerId())
+                    .ge(Orders::getCreateTime, startTime)
+                    .le(Orders::getCreateTime, endTime);
+            orders = orderService.list(wrapper);
+        }
+
+        // 解析类别ID列表
+        List<Long> categoryIds = null;
+        if (bill.getCategoryIds() != null && !bill.getCategoryIds().equals("[]") && !bill.getCategoryIds().isEmpty()) {
+            String ids = bill.getCategoryIds().replaceAll("[\\[\\]\\s]", "");
+            categoryIds = java.util.Arrays.stream(ids.split(","))
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+        }
+
+        // 收集所有订单明细（按类别筛选）
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (Orders order : orders) {
+            LambdaQueryWrapper<OrderItem> itemWrapper = new LambdaQueryWrapper<>();
+            itemWrapper.eq(OrderItem::getOrderId, order.getId());
+            List<OrderItem> orderItems = orderItemService.list(itemWrapper);
+
+            for (OrderItem item : orderItems) {
+                // 如果指定了类别筛选，检查商品是否属于指定类别
+                if (categoryIds != null && !categoryIds.isEmpty()) {
+                    Product product = productService.getById(item.getProductId());
+                    if (product == null || !categoryIds.contains(product.getCategoryId())) {
+                        continue;
+                    }
+                }
+
+                Map<String, Object> itemMap = new HashMap<>();
+                itemMap.put("orderNo", order.getOrderNo());
+                itemMap.put("orderDate", order.getCreateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+                itemMap.put("productName", item.getProductName());
+                itemMap.put("productCode", item.getProductCode());
+                itemMap.put("productSpec", item.getProductSpec());
+                itemMap.put("unit", item.getUnit());
+                itemMap.put("price", item.getPrice());
+                itemMap.put("quantity", item.getQuantity());
+                itemMap.put("subtotal", item.getSubtotal());
+                itemMap.put("remark", order.getRemark());
+                items.add(itemMap);
+            }
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("bill", bill);
+        result.put("items", items);
+        return result;
     }
 
     private String generateBillNo() {

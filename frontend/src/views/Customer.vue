@@ -98,10 +98,10 @@
       <el-table :data="tableData" class="modern-table desktop-table-view" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column prop="id" label="ID" width="80" align="center" />
-        <el-table-column prop="name" label="客户姓名" min-width="180" show-overflow-tooltip />
-        <el-table-column v-if="visibleCols.phone" prop="phone" label="联系电话" width="150" />
-        <el-table-column v-if="visibleCols.address" prop="address" label="地址" min-width="220" show-overflow-tooltip />
-        <el-table-column v-if="visibleCols.isMonthly" label="是否月结" width="120" align="center">
+        <el-table-column prop="name" label="客户姓名" min-width="150" show-overflow-tooltip />
+        <el-table-column v-if="visibleCols.phone" prop="phone" label="联系电话" width="140" />
+        <el-table-column v-if="visibleCols.address" prop="address" label="地址" width="200" show-overflow-tooltip />
+        <el-table-column v-if="visibleCols.isMonthly" label="是否月结" width="110" align="center">
           <template #default="{ row }">
             <el-tag :type="row.isMonthly ? 'success' : 'info'" size="small">
               {{ row.isMonthly ? '月结' : '普通' }}

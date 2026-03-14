@@ -7,6 +7,7 @@ import './assets/styles/global.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import App from './App.vue'
 import router from './router'
+import { useAuthStore } from './stores/auth'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -21,6 +22,11 @@ app.use(router)
 app.use(ElementPlus, {
   locale: zhCn,
 })
+
+// 初始化权限状态
+const authStore = useAuthStore()
+authStore.initAuth()
+
 app.mount('#app')
 
 // 注册 Service Worker (PWA 支持)

@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface OrderItemMapper extends BaseMapper<OrderItem> {
@@ -33,4 +34,15 @@ public interface OrderItemMapper extends BaseMapper<OrderItem> {
     List<StatisticsVO.CustomerRankItem> selectCustomerRank(@Param("startDate") String startDate,
                                                             @Param("endDate") String endDate,
                                                             @Param("limit") int limit);
+
+    // 利润统计相关查询
+    List<Map<String, Object>> selectProfitTrend(@Param("fmt") String fmt,
+                                                 @Param("startDate") String startDate,
+                                                 @Param("endDate") String endDate);
+
+    List<Map<String, Object>> selectProductProfitRank();
+
+    List<Map<String, Object>> selectCustomerProfitRank();
+
+    Map<String, Object> selectProfitSummary();
 }

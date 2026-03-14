@@ -24,8 +24,8 @@
    ```
 
 3. **更新本地文档**（每次功能变更后）
-   - 更新 `README.md` 的功能列表和更新日志
-   - 更新其他相关文档（如有）
+   - 更新 `README.md` 的功能列表
+   - 更新 `docs/修改记录.md` 的详细修改内容
 
 ### 快捷命令（可直接告诉我"帮我部署"）
 
@@ -34,7 +34,7 @@
 2. 生成 commit message
 3. push 到 GitHub
 4. ssh 到服务器执行 `cd /oil && git pull && docker-compose up -d --build`
-5. 更新 README.md 的更新日志
+5. 更新 `docs/修改记录.md`
 
 ## 服务器信息
 
@@ -67,9 +67,17 @@
 
 | 模块 | 文件 |
 |------|------|
-| 商品管理 | views/Product.vue |
+| 商品管理 | views/Product.vue（含成本和利润率） |
 | 客户管理 | views/Customer.vue |
-| 订单管理 | views/Order.vue |
+| 订单管理 | views/Order.vue（含利润信息） |
 | 月结账单 | views/MonthlyBill.vue |
 | H5 扫码下单 | views/Scan.vue |
-| 数据统计 | views/Statistics.vue（待开发） |
+| 数据统计 | views/Statistics.vue（含利润分析） |
+| 权限管理 | stores/auth.js + Home.vue |
+
+## 重要文档
+
+- **README.md** - 项目主文档，功能列表和快速开始
+- **docs/修改记录.md** - 详细的修改记录和技术说明
+- **PWA使用说明.md** - PWA 安装和使用指南
+- **deploy/** - 部署相关文档（HTTPS、日志等）

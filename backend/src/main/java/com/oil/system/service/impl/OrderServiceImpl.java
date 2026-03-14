@@ -90,6 +90,19 @@ public class OrderServiceImpl extends ServiceImpl<OrdersMapper, Orders> implemen
                 item.setPrice(product.getPrice());
                 item.setQuantity(itemDTO.getQuantity());
                 item.setSubtotal(product.getPrice().multiply(new BigDecimal(itemDTO.getQuantity())));
+
+                // 计算利润（如果商品有成本）
+                if (product.getCost() != null) {
+                    item.setCost(product.getCost());
+                    BigDecimal profit = product.getPrice()
+                            .subtract(product.getCost())
+                            .multiply(new BigDecimal(itemDTO.getQuantity()));
+                    item.setProfit(profit);
+                } else {
+                    item.setCost(null);
+                    item.setProfit(null);
+                }
+
                 orderItemService.save(item);
 
                 // 扣减库存
@@ -183,6 +196,19 @@ public class OrderServiceImpl extends ServiceImpl<OrdersMapper, Orders> implemen
                 item.setPrice(product.getPrice());
                 item.setQuantity(itemDTO.getQuantity());
                 item.setSubtotal(product.getPrice().multiply(new BigDecimal(itemDTO.getQuantity())));
+
+                // 计算利润（如果商品有成本）
+                if (product.getCost() != null) {
+                    item.setCost(product.getCost());
+                    BigDecimal profit = product.getPrice()
+                            .subtract(product.getCost())
+                            .multiply(new BigDecimal(itemDTO.getQuantity()));
+                    item.setProfit(profit);
+                } else {
+                    item.setCost(null);
+                    item.setProfit(null);
+                }
+
                 orderItemService.save(item);
 
                 // 扣减库存

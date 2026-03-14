@@ -23,6 +23,8 @@ public class Product {
 
     private BigDecimal price;
 
+    private BigDecimal cost;
+
     private Integer stock;
 
     private String qrcodePath;

@@ -4,6 +4,10 @@ import request from '@/utils/request'
 export const statisticsApi = {
   get(params) {
     return request.get('/statistics', { params })
+  },
+  // 获取利润统计（需要管理员权限）
+  getProfit(params) {
+    return request.get('/statistics/profit', { params })
   }
 }
 

@@ -91,6 +91,25 @@
               <span class="info-label">单价:</span>
               <span class="price-text">¥{{ item.price?.toFixed(2) || '0.00' }}</span>
             </div>
+            <div v-if="authStore.isAdmin" class="product-info-row">
+              <span class="info-label">成本:</span>
+              <span v-if="item.cost != null" class="cost-text">¥{{ item.cost.toFixed(2) }}</span>
+              <el-tag v-else type="info" size="small">未录入</el-tag>
+            </div>
+            <div v-if="authStore.isAdmin && item.cost != null && item.price > 0" class="product-info-row">
+              <span class="info-label">利润率:</span>
+              <el-tag
+                :type="(() => {
+                  const rate = (item.price - item.cost) / item.price * 100;
+                  if (rate > 30) return 'success';
+                  if (rate >= 10) return 'warning';
+                  return 'danger';
+                })()"
+                size="small"
+              >
+                {{ ((item.price - item.cost) / item.price * 100).toFixed(1) }}%
+              </el-tag>
+            </div>
           </div>
 
           <div class="product-card-actions">
@@ -113,6 +132,30 @@
         <el-table-column prop="price" label="单价" width="120" align="right">
           <template #default="{ row }">
             <span class="price-text">¥{{ row.price?.toFixed(2) || '0.00' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column v-if="authStore.isAdmin" prop="cost" label="成本" width="120" align="right">
+          <template #default="{ row }">
+            <span v-if="row.cost != null" class="cost-text">¥{{ row.cost.toFixed(2) }}</span>
+            <el-tag v-else type="info" size="small">未录入</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column v-if="authStore.isAdmin" label="利润率" width="100" align="center">
+          <template #default="{ row }">
+            <template v-if="row.cost != null && row.price > 0">
+              <el-tag
+                :type="(() => {
+                  const rate = (row.price - row.cost) / row.price * 100;
+                  if (rate > 30) return 'success';
+                  if (rate >= 10) return 'warning';
+                  return 'danger';
+                })()"
+                size="small"
+              >
+                {{ ((row.price - row.cost) / row.price * 100).toFixed(1) }}%
+              </el-tag>
+            </template>
+            <span v-else>-</span>
           </template>
         </el-table-column>
         <el-table-column prop="stock" label="库存" v-if="visibleCols.stock" width="100" align="center">
@@ -166,6 +209,9 @@
         <el-form-item label="单价" prop="price">
           <el-input-number v-model="form.price" :precision="2" :min="0" :step="0.1" style="width: 100%;" />
         </el-form-item>
+        <el-form-item v-if="authStore.isAdmin" label="成本价">
+          <el-input-number v-model="form.cost" :precision="2" :min="0" clearable style="width: 100%;" placeholder="不填写成本时，该商品不参与利润统计" />
+        </el-form-item>
         <el-form-item label="库存">
           <el-input-number v-model="form.stock" :min="0" :step="1" style="width: 100%;" />
         </el-form-item>
@@ -216,6 +262,10 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { productApi } from '@/api/index'
 import axios from 'axios'
+import { useAuthStore } from '@/stores/auth'
+
+// 初始化 authStore
+const authStore = useAuthStore()
 
 // 表单引用
 const formRef = ref(null)
@@ -252,7 +302,8 @@ const form = reactive({
   spec: '',
   unit: '瓶',
   price: 0,
-  stock: 0
+  stock: 0,
+  cost: null
 })
 
 // 二维码相关
@@ -314,7 +365,7 @@ const handleReset = () => {
 
 const handleAdd = () => {
   dialogTitle.value = '新增商品'
-  Object.assign(form, { id: null, name: '', code: '', spec: '', unit: '瓶', price: 0, stock: 0 })
+  Object.assign(form, { id: null, name: '', code: '', spec: '', unit: '瓶', price: 0, stock: 0, cost: null })
   dialogVisible.value = true
 }
 
@@ -607,6 +658,13 @@ onMounted(() => {
   color: var(--primary-color);
   font-weight: 600;
   font-size: 15px;
+}
+
+/* 成本样式 */
+.cost-text {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 14px;
 }
 
 /* 操作按钮 */

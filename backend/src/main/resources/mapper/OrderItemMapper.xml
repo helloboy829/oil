@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.oil.system.mapper.OrderItemMapper">
+
+    <!-- 利润趋势查询 -->
+    <select id="selectProfitTrend" resultType="java.util.Map">
+        SELECT
+            DATE_FORMAT(o.create_time, #{fmt}) as date,
+            COALESCE(SUM(oi.profit), 0) as profit
+        FROM order_item oi
+        LEFT JOIN orders o ON oi.order_id = o.id
+        WHERE o.create_time BETWEEN #{startDate} AND #{endDate}
+          AND oi.deleted = 0
+          AND o.deleted = 0
+          AND oi.profit IS NOT NULL
+        GROUP BY date
+        ORDER BY date
+    </select>
+
+    <!-- 商品利润排行 -->
+    <select id="selectProductProfitRank" resultType="java.util.Map">
+        SELECT
+            oi.product_name as productName,
+            SUM(oi.quantity) as quantity,
+            COALESCE(SUM(oi.profit), 0) as totalProfit,
+            CASE
+                WHEN SUM(oi.subtotal) > 0
+                THEN ROUND(COALESCE(SUM(oi.profit), 0) / SUM(oi.subtotal) * 100, 2)
+                ELSE 0
+            END as avgProfitRate
+        FROM order_item oi
+        WHERE oi.deleted = 0
+          AND oi.profit IS NOT NULL
+        GROUP BY oi.product_id, oi.product_name
+        ORDER BY totalProfit DESC
+        LIMIT 10
+    </select>
+
+    <!-- 客户利润贡献排行 -->
+    <select id="selectCustomerProfitRank" resultType="java.util.Map">
+        SELECT
+            o.customer_name as customerName,
+            COUNT(DISTINCT o.id) as orderCount,
+            COALESCE(SUM(oi.profit), 0) as totalProfit
+        FROM orders o
+        LEFT JOIN order_item oi ON o.id = oi.order_id
+        WHERE o.deleted = 0
+          AND oi.deleted = 0
+          AND oi.profit IS NOT NULL
+        GROUP BY o.customer_id, o.customer_name
+        ORDER BY totalProfit DESC
+        LIMIT 10
+    </select>
+
+    <!-- 查询利润汇总数据 -->
+    <select id="selectProfitSummary" resultType="java.util.Map">
+        SELECT
+            COALESCE(SUM(profit), 0) as totalProfit,
+            COUNT(DISTINCT product_id) as profitableProductCount
+        FROM order_item
+        WHERE deleted = 0
+          AND profit IS NOT NULL
+    </select>
+
+</mapper>

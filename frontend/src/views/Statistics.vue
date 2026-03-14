@@ -57,6 +57,39 @@
         <div ref="customerChartEl" class="chart-box" v-loading="loading"></div>
       </div>
     </div>
+
+    <!-- 利润分析（仅管理员可见） -->
+    <template v-if="authStore.isAdmin">
+      <!-- 利润汇总卡片 -->
+      <div class="summary-row">
+        <div class="summary-card">
+          <div class="summary-label">期间总利润</div>
+          <div class="summary-value profit">¥{{ profitData.summary.totalProfit.toFixed(2) }}</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">平均利润率</div>
+          <div class="summary-value">{{ (profitData.summary.avgProfitRate * 100).toFixed(1) }}%</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">可计算利润商品</div>
+          <div class="summary-value accent">{{ profitData.summary.calculableCount }} 种</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">最高利润商品</div>
+          <div class="summary-value accent">{{ profitData.summary.topProfitProduct }}</div>
+        </div>
+      </div>
+
+      <!-- 利润趋势图 -->
+      <div class="chart-card" v-if="profitData.trend && profitData.trend.length > 0">
+        <div class="card-title">💰 利润趋势</div>
+        <div ref="profitChartEl" class="chart-box"></div>
+      </div>
+      <div class="chart-card" v-else>
+        <div class="card-title">💰 利润分析</div>
+        <div class="no-data-tip">暂无可统计的利润数据（需要商品设置成本价）</div>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -64,6 +97,9 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { statisticsApi } from '@/api/index.js'
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
 
 // ---------- 状态 ----------
 const loading = ref(false)
@@ -79,6 +115,17 @@ const dateRange = ref([fmt(thirtyDaysAgo), fmt(today)])
 const trendData = ref([])
 const productRank = ref([])
 const customerRank = ref([])
+const profitData = ref({
+  trend: [],
+  summary: {
+    totalProfit: 0,
+    avgProfitRate: 0,
+    calculableCount: 0,
+    topProfitProduct: '-'
+  },
+  productRank: [],
+  customerRank: []
+})
 
 // ---------- 汇总计算 ----------
 const totalAmount = computed(() =>
@@ -91,9 +138,11 @@ const topCustomer = computed(() => customerRank.value[0]?.customerName || '-')
 const trendChartEl = ref(null)
 const productChartEl = ref(null)
 const customerChartEl = ref(null)
+const profitChartEl = ref(null)
 let trendChart = null
 let productChart = null
 let customerChart = null
+let profitChart = null
 
 // ---------- 日期快捷选项 ----------
 const dateShortcuts = [
@@ -118,6 +167,10 @@ async function loadData() {
     customerRank.value = res.data.customerRank || []
     await nextTick()
     renderCharts()
+    // 管理员同时加载利润数据
+    if (authStore.isAdmin) {
+      loadProfitStatistics()
+    }
   } finally {
     loading.value = false
   }
@@ -125,6 +178,36 @@ async function loadData() {
 
 function onTypeChange() {
   loadData()
+  if (authStore.isAdmin) {
+    loadProfitStatistics()
+  }
+}
+
+// ---------- 加载利润统计（仅管理员） ----------
+async function loadProfitStatistics() {
+  if (!dateRange.value || !authStore.isAdmin) return
+  try {
+    const res = await statisticsApi.getProfit({
+      type: queryType.value,
+      start: dateRange.value[0],
+      end: dateRange.value[1],
+    })
+    profitData.value = res.data || {
+      trend: [],
+      summary: {
+        totalProfit: 0,
+        avgProfitRate: 0,
+        calculableCount: 0,
+        topProfitProduct: '-'
+      },
+      productRank: [],
+      customerRank: []
+    }
+    await nextTick()
+    renderProfitChart()
+  } catch (error) {
+    console.error('加载利润数据失败:', error)
+  }
 }
 
 // ---------- 渲染图表 ----------
@@ -195,15 +278,44 @@ function renderCustomerRank() {
   })
 }
 
+function renderProfitChart() {
+  if (!profitChartEl.value) return
+  if (!profitChart) profitChart = echarts.init(profitChartEl.value)
+  profitChart.setOption({
+    tooltip: { trigger: 'axis', valueFormatter: v => '¥' + Number(v).toFixed(2) },
+    grid: { left: 60, right: 20, top: 20, bottom: 40 },
+    xAxis: {
+      type: 'category',
+      data: profitData.value.trend.map(i => i.date),
+      axisLabel: { rotate: profitData.value.trend.length > 20 ? 30 : 0, fontSize: 12 }
+    },
+    yAxis: { type: 'value', axisLabel: { formatter: v => '¥' + v } },
+    series: [{
+      type: 'line',
+      data: profitData.value.trend.map(i => Number(i.profit).toFixed(2)),
+      smooth: true,
+      symbol: 'circle',
+      symbolSize: 6,
+      lineStyle: { color: '#10b981', width: 2 },
+      itemStyle: { color: '#10b981' },
+      areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(16,185,129,0.25)' }, { offset: 1, color: 'rgba(16,185,129,0)' }] } }
+    }]
+  })
+}
+
 // ---------- 响应式 resize ----------
 function handleResize() {
   trendChart?.resize()
   productChart?.resize()
   customerChart?.resize()
+  profitChart?.resize()
 }
 
 onMounted(() => {
   loadData()
+  if (authStore.isAdmin) {
+    loadProfitStatistics()
+  }
   window.addEventListener('resize', handleResize)
 })
 
@@ -212,6 +324,7 @@ onUnmounted(() => {
   trendChart?.dispose()
   productChart?.dispose()
   customerChart?.dispose()
+  profitChart?.dispose()
 })
 </script>
 
@@ -270,6 +383,10 @@ onUnmounted(() => {
   color: #10b981;
 }
 
+.summary-value.profit {
+  color: #10b981;
+}
+
 .chart-card {
   background: white;
   border-radius: var(--radius-md);
@@ -297,6 +414,13 @@ onUnmounted(() => {
 .chart-box {
   width: 100%;
   height: 320px;
+}
+
+.no-data-tip {
+  text-align: center;
+  padding: 100px 0;
+  color: var(--text-secondary);
+  font-size: 14px;
 }
 
 @media (max-width: 768px) {

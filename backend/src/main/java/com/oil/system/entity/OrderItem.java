@@ -25,9 +25,13 @@ public class OrderItem {
 
     private BigDecimal price;
 
+    private BigDecimal cost;
+
     private Integer quantity;
 
     private BigDecimal subtotal;
+
+    private BigDecimal profit;
 
     @TableLogic
     private Integer deleted;

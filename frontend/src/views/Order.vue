@@ -285,6 +285,29 @@
           </div>
         </div>
 
+        <!-- 利润信息（仅管理员可见） -->
+        <div class="detail-section" v-if="authStore.isAdmin">
+          <h3 class="section-title">
+            <el-icon><TrendCharts /></el-icon>
+            <span>利润信息</span>
+          </h3>
+          <el-descriptions :column="3" border class="profit-descriptions">
+            <el-descriptions-item label="订单成本" label-class-name="profit-label">
+              <span class="cost-text">¥{{ getTotalCost().toFixed(2) }}</span>
+            </el-descriptions-item>
+            <el-descriptions-item label="订单利润" label-class-name="profit-label">
+              <span class="profit-text">¥{{ getTotalProfit().toFixed(2) }}</span>
+            </el-descriptions-item>
+            <el-descriptions-item label="利润率" label-class-name="profit-label">
+              <span class="profit-rate-text">{{ getProfitRate() }}%</span>
+            </el-descriptions-item>
+          </el-descriptions>
+          <div v-if="hasIncompleteCost()" class="cost-warning">
+            <el-icon><WarningFilled /></el-icon>
+            <span>部分商品无成本信息，利润计算可能不准确</span>
+          </div>
+        </div>
+
         <!-- 商品明细 -->
         <div class="detail-section">
           <h3 class="section-title">
@@ -306,6 +329,12 @@
             <el-table-column prop="subtotal" label="小计" width="120" align="right">
               <template #default="{ row }">
                 <span class="subtotal-text">¥{{ row.subtotal?.toFixed(2) }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column v-if="authStore.isAdmin" prop="profit" label="单品利润" width="120" align="right">
+              <template #default="{ row }">
+                <span v-if="row.profit !== null && row.profit !== undefined" class="profit-text">¥{{ row.profit?.toFixed(2) }}</span>
+                <span v-else class="no-data-text">-</span>
               </template>
             </el-table-column>
           </el-table>
@@ -338,6 +367,10 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { orderApi } from '@/api/order'
 import { customerApi, productApi } from '@/api/index'
 import { formatDateTime } from '@/utils/format'
+import { useAuthStore } from '@/stores/auth'
+
+// Auth store
+const authStore = useAuthStore()
 
 // 表单引用
 const formRef = ref(null)
@@ -663,6 +696,39 @@ const getTotalQuantity = () => {
   return currentOrder.value.items.reduce((sum, item) => sum + item.quantity, 0)
 }
 
+const getTotalCost = () => {
+  if (!currentOrder.value?.items) return 0
+  return currentOrder.value.items.reduce((sum, item) => {
+    if (item.cost !== null && item.cost !== undefined) {
+      return sum + (item.cost * item.quantity)
+    }
+    return sum
+  }, 0)
+}
+
+const getTotalProfit = () => {
+  if (!currentOrder.value?.items) return 0
+  return currentOrder.value.items.reduce((sum, item) => {
+    if (item.profit !== null && item.profit !== undefined) {
+      return sum + item.profit
+    }
+    return sum
+  }, 0)
+}
+
+const getProfitRate = () => {
+  if (!currentOrder.value?.order?.totalAmount) return '0.00'
+  const totalAmount = currentOrder.value.order.totalAmount
+  if (totalAmount === 0) return '0.00'
+  const profitRate = (getTotalProfit() / totalAmount) * 100
+  return profitRate.toFixed(2)
+}
+
+const hasIncompleteCost = () => {
+  if (!currentOrder.value?.items) return false
+  return currentOrder.value.items.some(item => item.cost === null || item.cost === undefined)
+}
+
 const handleDelete = (row) => {
   ElMessageBox.confirm('确定删除该订单吗？', '提示', {
     confirmButtonText: '确定',
@@ -942,6 +1008,57 @@ onMounted(() => {
   color: var(--primary-color);
   font-size: 18px;
   font-weight: 700;
+}
+
+/* 利润信息样式 */
+.profit-descriptions {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.profit-descriptions :deep(.el-descriptions__label) {
+  font-weight: 600;
+  background-color: var(--bg-color);
+}
+
+.cost-text {
+  color: var(--text-main);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.profit-text {
+  color: #10b981;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.profit-rate-text {
+  color: #10b981;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.no-data-text {
+  color: var(--text-placeholder);
+  font-size: 14px;
+}
+
+.cost-warning {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background-color: #fef3cd;
+  border: 1px solid #ffd666;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #d48806;
+  font-size: 14px;
+}
+
+.cost-warning .el-icon {
+  font-size: 16px;
 }
 
 /* 商品明细表格 */

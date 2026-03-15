@@ -269,8 +269,9 @@ public class StatisticsController {
         List<StockStatisticsVO.CategoryStock> categoryStock = new ArrayList<>();
         for (Map<String, Object> map : categoryStockData) {
             String categoryName = (String) map.get("categoryName");
-            Long stock = (Long) map.get("stock");
-            Long productCount = (Long) map.get("productCount");
+            // MySQL 的 SUM/COUNT 返回 BigDecimal，需要转换
+            Number stock = (Number) map.get("stock");
+            Number productCount = (Number) map.get("productCount");
             categoryStock.add(new StockStatisticsVO.CategoryStock(
                     categoryName,
                     stock != null ? stock.intValue() : 0,

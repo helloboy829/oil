@@ -213,7 +213,14 @@
           <el-input v-model="form.name" placeholder="请输入商品名称" />
         </el-form-item>
         <el-form-item label="商品类别" prop="categoryId">
-          <el-select v-model="form.categoryId" placeholder="请选择类别" style="width: 100%;">
+          <el-select
+            v-model="form.categoryId"
+            placeholder="请选择或输入新类别"
+            filterable
+            allow-create
+            default-first-option
+            style="width: 100%;"
+          >
             <el-option
               v-for="category in categoryList"
               :key="category.id"
@@ -440,12 +447,38 @@ const handleSubmit = async () => {
   }
 
   try {
+    // 检查类别是否为新输入的（字符串类型）
+    if (typeof form.categoryId === 'string') {
+      const categoryName = form.categoryId.trim()
+      // 先检查是否已存在同名类别
+      const existingCategory = categoryList.value.find(c => c.name === categoryName)
+      if (existingCategory) {
+        // 如果已存在，使用已有类别的ID
+        form.categoryId = existingCategory.id
+      } else {
+        // 创建新类别
+        const maxSort = categoryList.value.length > 0
+          ? Math.max(...categoryList.value.map(c => c.sort || 0))
+          : 0
+        const newCategory = {
+          name: categoryName,
+          sort: maxSort + 1
+        }
+        const res = await categoryApi.add(newCategory)
+        form.categoryId = res.data.id || res.data
+        // 重新加载类别列表
+        await loadCategories()
+        ElMessage.success(`已创建新类别：${categoryName}`)
+      }
+    }
+
+    // 提交商品数据
     if (form.id) {
       await productApi.update(form)
     } else {
       await productApi.add(form)
     }
-    ElMessage.success('操作成功')
+    ElMessage.success('商品保存成功')
     // 清空缓存，强制重新加载
     allProductNames.value = []
     // 先关闭对话框

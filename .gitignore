@@ -23,8 +23,9 @@ npm-debug.log*
 .env
 .env.local
 
-# Claude Code temporary files
+# Claude Code temporary files and settings
 tmpclaude-*-cwd
+.claude/settings.local.json
 
 # Vite cache
 frontend/.vite/

@@ -37,6 +37,10 @@
           <el-icon><Goods /></el-icon>
           <span>商品管理</span>
         </el-menu-item>
+        <el-menu-item index="/category" v-if="authStore.isAdmin">
+          <el-icon><FolderOpened /></el-icon>
+          <span>分类管理</span>
+        </el-menu-item>
         <el-menu-item index="/customer">
           <el-icon><User /></el-icon>
           <span>客户管理</span>
@@ -145,7 +149,7 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { TrendCharts } from '@element-plus/icons-vue'
+import { TrendCharts, FolderOpened } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { authApi } from '@/api/auth'
 import { ElMessage } from 'element-plus'
@@ -240,6 +244,7 @@ const currentRouteName = computed(() => {
   const nameMap = {
     '/scan': '扫码开单',
     '/product': '商品管理',
+    '/category': '分类管理',
     '/customer': '客户管理',
     '/order': '订单管理',
     '/monthly-bill': '月结账单',

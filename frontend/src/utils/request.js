@@ -3,7 +3,11 @@ import { ElMessage } from 'element-plus'
 
 const request = axios.create({
   baseURL: '/api',
-  timeout: 10000
+  timeout: 10000,
+  paramsSerializer: {
+    // 配置数组参数序列化格式，使用 repeat 格式（a=1&a=2）以兼容 Spring Boot
+    indexes: null  // 这会生成 a=1&a=2 而不是 a[0]=1&a[1]=2
+  }
 })
 
 // 请求拦截器

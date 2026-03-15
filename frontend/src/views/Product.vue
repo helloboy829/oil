@@ -306,6 +306,9 @@ const formRules = {
   name: [
     { required: true, message: '请输入商品名称', trigger: 'blur' }
   ],
+  categoryId: [
+    { required: true, message: '请选择商品类别', trigger: 'change' }
+  ],
   price: [
     { required: true, message: '请输入商品价格', trigger: 'blur' }
   ]
@@ -412,7 +415,10 @@ const handleReset = () => {
 
 const handleAdd = () => {
   dialogTitle.value = '新增商品'
-  Object.assign(form, { id: null, name: '', code: '', spec: '', unit: '只', price: 0, stock: 0, cost: null, categoryId: null })
+  // 查找"其他"类别的ID作为默认值
+  const otherCategory = categoryList.value.find(cat => cat.name === '其他')
+  const defaultCategoryId = otherCategory ? otherCategory.id : null
+  Object.assign(form, { id: null, name: '', code: '', spec: '', unit: '只', price: 0, stock: 0, cost: null, categoryId: defaultCategoryId })
   dialogVisible.value = true
 }
 

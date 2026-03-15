@@ -245,9 +245,9 @@
           </h3>
           <el-table :data="currentBill.items" border class="detail-table">
             <el-table-column type="index" label="序号" width="60" align="center" />
+            <el-table-column prop="productCode" label="编号" width="110" align="center" />
             <el-table-column prop="orderDate" label="日期" width="110" align="center" />
-            <el-table-column prop="productName" label="品名" min-width="150" show-overflow-tooltip />
-            <el-table-column prop="productSpec" label="规格" width="100" align="center" />
+            <el-table-column prop="productName" label="商品名称" min-width="150" show-overflow-tooltip />
             <el-table-column prop="unit" label="单位" width="80" align="center" />
             <el-table-column prop="quantity" label="数量" width="80" align="center" />
             <el-table-column prop="price" label="单价" width="100" align="right">

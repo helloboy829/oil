@@ -45,11 +45,11 @@ public class ExcelUtil {
             Workbook workbook = new XSSFWorkbook();
             Sheet sheet = workbook.createSheet("月结账单");
 
-            // 设置列宽（按照新格式：序号、日期、品名、规格、单位、数量、单价、金额、备注）
+            // 设置列宽（按照新格式：序号、编号、日期、商品名称、单位、数量、单价、金额、备注）
             sheet.setColumnWidth(0, 3000);  // 序号
-            sheet.setColumnWidth(1, 5000);  // 日期
-            sheet.setColumnWidth(2, 8000);  // 品名（商品名称）
-            sheet.setColumnWidth(3, 5000);  // 规格
+            sheet.setColumnWidth(1, 5000);  // 编号
+            sheet.setColumnWidth(2, 5000);  // 日期
+            sheet.setColumnWidth(3, 8000);  // 商品名称
             sheet.setColumnWidth(4, 3000);  // 单位
             sheet.setColumnWidth(5, 3000);  // 数量
             sheet.setColumnWidth(6, 4000);  // 单价
@@ -107,11 +107,11 @@ public class ExcelUtil {
                     Row dataRow = sheet.createRow(rowNum++);
                     dataRow.setHeight((short) 400);
 
-                    // 新格式：序号、日期、品名、规格、单位、数量、单价、金额、备注
+                    // 新格式：序号、编号、日期、商品名称、单位、数量、单价、金额、备注
                     createCell(dataRow, 0, String.valueOf(serialNo++), dataStyle);
-                    createCell(dataRow, 1, order.getCreateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")), dataStyle);
-                    createCell(dataRow, 2, item.getProductName(), dataStyle);
-                    createCell(dataRow, 3, item.getProductSpec() != null ? item.getProductSpec() : "", dataStyle);
+                    createCell(dataRow, 1, item.getProductCode() != null ? item.getProductCode() : "", dataStyle);
+                    createCell(dataRow, 2, order.getCreateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")), dataStyle);
+                    createCell(dataRow, 3, item.getProductName(), dataStyle);
                     createCell(dataRow, 4, item.getUnit(), dataStyle);
                     createCell(dataRow, 5, String.valueOf(item.getQuantity()), dataStyle);
                     createCell(dataRow, 6, "¥" + item.getPrice().setScale(2, BigDecimal.ROUND_HALF_UP), dataStyle);
@@ -249,7 +249,7 @@ public class ExcelUtil {
         Row headerRow = sheet.createRow(rowNum++);
         headerRow.setHeight((short) 450);
 
-        String[] headers = {"序号", "日期", "品名", "规格", "单位", "数量", "单价", "金额", "备注"};
+        String[] headers = {"序号", "编号", "日期", "商品名称", "单位", "数量", "单价", "金额", "备注"};
         for (int i = 0; i < headers.length; i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers[i]);

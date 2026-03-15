@@ -29,7 +29,7 @@
             <el-option
               v-for="category in categoryList"
               :key="category.id"
-              :label="category.name"
+              :label="`${category.name} (${category.productCount || 0})`"
               :value="category.id"
             />
           </el-select>
@@ -365,7 +365,7 @@ const loadData = async () => {
 // 加载分类列表
 const loadCategories = async () => {
   try {
-    const res = await categoryApi.getList()
+    const res = await categoryApi.getListWithCount()
     categoryList.value = res.data
   } catch (err) {
     console.error('加载分类列表失败', err)

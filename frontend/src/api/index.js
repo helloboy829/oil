@@ -73,6 +73,10 @@ export const categoryApi = {
   getList() {
     return request.get('/category/list')
   },
+  // 获取所有分类列表（含商品数量统计）
+  getListWithCount() {
+    return request.get('/category/listWithCount')
+  },
   // 新增分类
   add(data) {
     return request.post('/category', data)

@@ -97,7 +97,7 @@
             <span style="color: #67c23a; font-weight: 600;">¥{{ row.paidAmount?.toFixed(2) || '0.00' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="结算状态" width="120" align="center">
+        <el-table-column label="结算状态" min-width="120" align="center">
           <template #default="{ row }">
             <el-button
               v-if="row.status === '未结清'"
@@ -119,7 +119,7 @@
             </el-button>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="300" fixed="right" align="center">
+        <el-table-column label="操作" min-width="280" fixed="right" align="center">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="handleView(row)" icon="View">
               预览

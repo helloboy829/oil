@@ -43,19 +43,25 @@ public class ProductCategoryController {
         wrapper.orderByAsc(ProductCategory::getSort);
         List<ProductCategory> categories = categoryService.list(wrapper);
 
-        // 统计每个类别下的商品数量
+        // 统计每个类别下的商品库存总量
         List<CategoryWithCountDTO> result = categories.stream().map(category -> {
-            // 查询该类别下的商品数量
+            // 查询该类别下所有商品
             LambdaQueryWrapper<Product> productWrapper = new LambdaQueryWrapper<>();
-            productWrapper.eq(Product::getCategoryId, category.getId());
-            long count = productService.count(productWrapper);
+            productWrapper.eq(Product::getCategoryId, category.getId())
+                         .eq(Product::getDeleted, 0);
+            List<Product> products = productService.list(productWrapper);
+
+            // 计算库存总和
+            long totalStock = products.stream()
+                    .mapToInt(p -> p.getStock() != null ? p.getStock() : 0)
+                    .sum();
 
             // 构建DTO
             return new CategoryWithCountDTO(
                     category.getId(),
                     category.getName(),
                     category.getSort(),
-                    count
+                    totalStock
             );
         }).collect(Collectors.toList());
 

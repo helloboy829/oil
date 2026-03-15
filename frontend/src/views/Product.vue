@@ -132,6 +132,7 @@
       <el-table :data="tableData" class="modern-table desktop-table-view" @row-click="handleRowClick" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column prop="id" label="编号" width="80" align="center" />
+        <el-table-column prop="code" label="商品编号" min-width="120" show-overflow-tooltip />
         <el-table-column prop="name" label="商品名称" min-width="150" show-overflow-tooltip />
         <el-table-column v-if="visibleCols.category" label="类别" width="100" align="center">
           <template #default="{ row }">
@@ -178,7 +179,7 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column v-if="visibleCols.remark" prop="code" label="备注" min-width="120" show-overflow-tooltip />
+        <el-table-column v-if="visibleCols.remark" prop="description" label="备注" min-width="120" show-overflow-tooltip />
         <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons-grid">
@@ -243,7 +244,7 @@
           <el-input-number v-model="form.cost" :precision="2" :min="0" clearable style="width: 100%;" placeholder="不填写成本时，该商品不参与利润统计" />
         </el-form-item>
         <el-form-item label="备注">
-          <el-input v-model="form.code" type="textarea" :rows="2" placeholder="请输入备注信息" />
+          <el-input v-model="form.description" type="textarea" :rows="2" placeholder="请输入备注信息" />
         </el-form-item>
       </el-form>
       <template #footer>

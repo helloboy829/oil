@@ -34,6 +34,11 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
     @Override
     @Transactional
     public MonthlyBill generateMonthlyBill(Long customerId, String billMonth, List<Long> categoryIds) {
+        System.out.println("===== 生成月结账单 =====");
+        System.out.println("客户ID: " + customerId);
+        System.out.println("账单月份: " + billMonth);
+        System.out.println("类别IDs: " + categoryIds);
+
         Customer customer = customerService.getById(customerId);
         if (customer == null) {
             throw new RuntimeException("客户不存在");
@@ -51,10 +56,12 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
                 .ge(Orders::getCreateTime, startTime)
                 .le(Orders::getCreateTime, endTime);
         List<Orders> orders = orderService.list(wrapper);
+        System.out.println("找到订单数量: " + orders.size());
 
         // 如果指定了类别，需要筛选订单明细
         BigDecimal totalAmount;
         if (categoryIds != null && !categoryIds.isEmpty()) {
+            System.out.println("===== 按类别筛选 =====");
             // 按类别筛选：只统计指定类别的商品金额
             totalAmount = BigDecimal.ZERO;
             for (Orders order : orders) {
@@ -62,15 +69,21 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
                 LambdaQueryWrapper<OrderItem> itemWrapper = new LambdaQueryWrapper<>();
                 itemWrapper.eq(OrderItem::getOrderId, order.getId());
                 List<OrderItem> items = orderItemService.list(itemWrapper);
+                System.out.println("订单 " + order.getId() + " 明细数: " + items.size());
 
                 // 筛选指定类别的商品
                 for (OrderItem item : items) {
                     Product product = productService.getById(item.getProductId());
+                    System.out.println("  商品 " + item.getProductId() + " (" + (product != null ? product.getName() : "null") + ") 类别: " + (product != null ? product.getCategoryId() : "null"));
                     if (product != null && categoryIds.contains(product.getCategoryId())) {
+                        System.out.println("    ✓ 匹配类别，金额: " + item.getSubtotal());
                         totalAmount = totalAmount.add(item.getSubtotal());
+                    } else {
+                        System.out.println("    ✗ 不匹配类别");
                     }
                 }
             }
+            System.out.println("筛选后总金额: " + totalAmount);
         } else {
             // 不限制类别：统计所有订单金额
             totalAmount = orders.stream()

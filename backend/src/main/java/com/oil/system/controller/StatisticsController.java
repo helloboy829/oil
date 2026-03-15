@@ -8,6 +8,7 @@ import com.oil.system.mapper.OrdersMapper;
 import com.oil.system.mapper.ProductMapper;
 import com.oil.system.vo.ProfitStatisticsVO;
 import com.oil.system.vo.StatisticsVO;
+import com.oil.system.vo.StockStatisticsVO;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
@@ -223,5 +224,89 @@ public class StatisticsController {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /**
+     * 获取库存统计数据
+     */
+    @GetMapping("/stock")
+    public Result<StockStatisticsVO> getStockStatistics() {
+        StockStatisticsVO vo = new StockStatisticsVO();
+
+        // 1. 商品总数
+        Long totalCount = productMapper.selectCount(
+                new LambdaQueryWrapper<Product>().eq(Product::getDeleted, 0)
+        );
+        vo.setTotalProductCount(totalCount != null ? totalCount.intValue() : 0);
+
+        // 2. 库存总量
+        List<Product> allProducts = productMapper.selectList(
+                new LambdaQueryWrapper<Product>().eq(Product::getDeleted, 0)
+        );
+        int totalStock = allProducts.stream()
+                .mapToInt(p -> p.getStock() != null ? p.getStock() : 0)
+                .sum();
+        vo.setTotalStock(totalStock);
+
+        // 3. 库存不足商品数（库存 <= 10）
+        Long lowStockCount = productMapper.selectCount(
+                new LambdaQueryWrapper<Product>()
+                        .eq(Product::getDeleted, 0)
+                        .le(Product::getStock, 10)
+        );
+        vo.setLowStockCount(lowStockCount != null ? lowStockCount.intValue() : 0);
+
+        // 4. 零库存商品数
+        Long zeroStockCount = productMapper.selectCount(
+                new LambdaQueryWrapper<Product>()
+                        .eq(Product::getDeleted, 0)
+                        .eq(Product::getStock, 0)
+        );
+        vo.setZeroStockCount(zeroStockCount != null ? zeroStockCount.intValue() : 0);
+
+        // 5. 商品类别库存分布
+        List<Map<String, Object>> categoryStockData = productMapper.selectCategoryStock();
+        List<StockStatisticsVO.CategoryStock> categoryStock = new ArrayList<>();
+        for (Map<String, Object> map : categoryStockData) {
+            String categoryName = (String) map.get("categoryName");
+            Long stock = (Long) map.get("stock");
+            Long productCount = (Long) map.get("productCount");
+            categoryStock.add(new StockStatisticsVO.CategoryStock(
+                    categoryName,
+                    stock != null ? stock.intValue() : 0,
+                    productCount != null ? productCount.intValue() : 0
+            ));
+        }
+        vo.setCategoryStock(categoryStock);
+
+        // 6. 库存不足商品详情
+        List<Map<String, Object>> lowStockData = productMapper.selectLowStockProducts();
+        List<StockStatisticsVO.LowStockProduct> lowStockProducts = new ArrayList<>();
+        for (Map<String, Object> map : lowStockData) {
+            Long id = (Long) map.get("id");
+            String name = (String) map.get("name");
+            String categoryName = (String) map.get("categoryName");
+            Integer stock = (Integer) map.get("stock");
+            String unit = (String) map.get("unit");
+            lowStockProducts.add(new StockStatisticsVO.LowStockProduct(
+                    id, name, categoryName, stock, unit
+            ));
+        }
+        vo.setLowStockProducts(lowStockProducts);
+
+        // 7. 库存排行 TOP10
+        List<Map<String, Object>> stockRankData = productMapper.selectStockRank();
+        List<StockStatisticsVO.StockRank> stockRank = new ArrayList<>();
+        for (Map<String, Object> map : stockRankData) {
+            String productName = (String) map.get("productName");
+            Integer stock = (Integer) map.get("stock");
+            String categoryName = (String) map.get("categoryName");
+            stockRank.add(new StockStatisticsVO.StockRank(
+                    productName, stock, categoryName
+            ));
+        }
+        vo.setStockRank(stockRank);
+
+        return Result.success(vo);
     }
 }

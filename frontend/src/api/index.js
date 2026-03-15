@@ -8,6 +8,10 @@ export const statisticsApi = {
   // 获取利润统计（需要管理员权限）
   getProfit(params) {
     return request.get('/statistics/profit', { params })
+  },
+  // 获取库存统计
+  getStock() {
+    return request.get('/statistics/stock')
   }
 }
 

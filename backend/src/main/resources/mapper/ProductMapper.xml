@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.oil.system.mapper.ProductMapper">
+
+    <!-- 查询商品类别库存分布 -->
+    <select id="selectCategoryStock" resultType="java.util.Map">
+        SELECT
+            IFNULL(c.name, '未分类') AS categoryName,
+            SUM(p.stock) AS stock,
+            COUNT(p.id) AS productCount
+        FROM product p
+        LEFT JOIN product_category c ON p.category_id = c.id
+        WHERE p.deleted = 0
+        GROUP BY p.category_id, c.name
+        ORDER BY stock DESC
+    </select>
+
+    <!-- 查询库存不足商品详情（库存 <= 10） -->
+    <select id="selectLowStockProducts" resultType="java.util.Map">
+        SELECT
+            p.id,
+            p.name,
+            IFNULL(c.name, '未分类') AS categoryName,
+            p.stock,
+            p.unit
+        FROM product p
+        LEFT JOIN product_category c ON p.category_id = c.id
+        WHERE p.deleted = 0 AND p.stock &lt;= 10
+        ORDER BY p.stock ASC, p.id ASC
+    </select>
+
+    <!-- 查询库存排行 TOP10 -->
+    <select id="selectStockRank" resultType="java.util.Map">
+        SELECT
+            p.name AS productName,
+            p.stock,
+            IFNULL(c.name, '未分类') AS categoryName
+        FROM product p
+        LEFT JOIN product_category c ON p.category_id = c.id
+        WHERE p.deleted = 0
+        ORDER BY p.stock DESC
+        LIMIT 10
+    </select>
+
+</mapper>

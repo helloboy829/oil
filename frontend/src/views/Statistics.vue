@@ -90,6 +90,70 @@
         <div class="no-data-tip">暂无可统计的利润数据（需要商品设置成本价）</div>
       </div>
     </template>
+
+    <!-- 库存统计 -->
+    <div class="section-divider">📦 商品库存统计</div>
+
+    <!-- 库存汇总卡片 -->
+    <div class="summary-row">
+      <div class="summary-card">
+        <div class="summary-label">商品总数</div>
+        <div class="summary-value primary">{{ stockData.summary.totalProductCount }} 种</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">库存总量</div>
+        <div class="summary-value">{{ stockData.summary.totalStock }} 件</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">库存不足预警</div>
+        <div class="summary-value warning">{{ stockData.summary.lowStockCount }} 种</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">零库存商品</div>
+        <div class="summary-value danger">{{ stockData.summary.zeroStockCount }} 种</div>
+      </div>
+    </div>
+
+    <!-- 库存图表 -->
+    <div class="rank-row">
+      <!-- 商品类别库存分布 -->
+      <div class="chart-card half">
+        <div class="card-title">商品类别库存分布</div>
+        <div ref="categoryStockChartEl" class="chart-box" v-loading="stockLoading"></div>
+      </div>
+      <!-- 库存排行 TOP10 -->
+      <div class="chart-card half">
+        <div class="card-title">库存排行 TOP10</div>
+        <div ref="stockRankChartEl" class="chart-box" v-loading="stockLoading"></div>
+      </div>
+    </div>
+
+    <!-- 库存不足商品列表 -->
+    <div class="chart-card" v-if="stockData.lowStockProducts.length > 0">
+      <div class="card-title">⚠️ 库存不足商品预警（库存 ≤ 10）</div>
+      <el-table :data="stockData.lowStockProducts" class="stock-warning-table" stripe>
+        <el-table-column prop="name" label="商品名称" width="200" show-overflow-tooltip />
+        <el-table-column prop="categoryName" label="类别" width="120" align="center" />
+        <el-table-column prop="stock" label="当前库存" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag :type="row.stock === 0 ? 'danger' : 'warning'" size="small">
+              {{ row.stock }} {{ row.unit }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="unit" label="单位" width="80" align="center" />
+        <el-table-column label="状态" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.stock === 0" type="danger" size="small">缺货</el-tag>
+            <el-tag v-else type="warning" size="small">库存不足</el-tag>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+    <div class="chart-card" v-else>
+      <div class="card-title">⚠️ 库存不足商品预警</div>
+      <div class="no-data-tip">✅ 所有商品库存充足</div>
+    </div>
   </div>
 </template>
 
@@ -127,6 +191,20 @@ const profitData = ref({
   customerRank: []
 })
 
+// 库存统计数据
+const stockLoading = ref(false)
+const stockData = ref({
+  summary: {
+    totalProductCount: 0,
+    totalStock: 0,
+    lowStockCount: 0,
+    zeroStockCount: 0
+  },
+  categoryStock: [],
+  lowStockProducts: [],
+  stockRank: []
+})
+
 // ---------- 汇总计算 ----------
 const totalAmount = computed(() =>
   trendData.value.reduce((s, i) => s + Number(i.amount || 0), 0)
@@ -139,10 +217,14 @@ const trendChartEl = ref(null)
 const productChartEl = ref(null)
 const customerChartEl = ref(null)
 const profitChartEl = ref(null)
+const categoryStockChartEl = ref(null)
+const stockRankChartEl = ref(null)
 let trendChart = null
 let productChart = null
 let customerChart = null
 let profitChart = null
+let categoryStockChart = null
+let stockRankChart = null
 
 // ---------- 日期快捷选项 ----------
 const dateShortcuts = [
@@ -207,6 +289,32 @@ async function loadProfitStatistics() {
     renderProfitChart()
   } catch (error) {
     console.error('加载利润数据失败:', error)
+  }
+}
+
+// ---------- 加载库存统计 ----------
+async function loadStockStatistics() {
+  stockLoading.value = true
+  try {
+    const res = await statisticsApi.getStock()
+    const data = res.data || {}
+    stockData.value = {
+      summary: {
+        totalProductCount: data.totalProductCount || 0,
+        totalStock: data.totalStock || 0,
+        lowStockCount: data.lowStockCount || 0,
+        zeroStockCount: data.zeroStockCount || 0
+      },
+      categoryStock: data.categoryStock || [],
+      lowStockProducts: data.lowStockProducts || [],
+      stockRank: data.stockRank || []
+    }
+    await nextTick()
+    renderStockCharts()
+  } catch (error) {
+    console.error('加载库存数据失败:', error)
+  } finally {
+    stockLoading.value = false
   }
 }
 
@@ -303,16 +411,101 @@ function renderProfitChart() {
   })
 }
 
+// ---------- 渲染库存图表 ----------
+function renderStockCharts() {
+  renderCategoryStockChart()
+  renderStockRankChart()
+}
+
+function renderCategoryStockChart() {
+  if (!categoryStockChartEl.value) return
+  if (!categoryStockChart) categoryStockChart = echarts.init(categoryStockChartEl.value)
+  const data = stockData.value.categoryStock.map(item => ({
+    name: item.categoryName,
+    value: item.stock
+  }))
+  categoryStockChart.setOption({
+    tooltip: {
+      trigger: 'item',
+      formatter: '{b}: {c} 件 ({d}%)'
+    },
+    legend: {
+      orient: 'vertical',
+      right: 10,
+      top: 'middle',
+      formatter: name => {
+        const item = stockData.value.categoryStock.find(i => i.categoryName === name)
+        return `${name} (${item?.productCount || 0}种)`
+      }
+    },
+    series: [{
+      type: 'pie',
+      radius: ['40%', '70%'],
+      center: ['40%', '50%'],
+      data: data,
+      emphasis: {
+        itemStyle: {
+          shadowBlur: 10,
+          shadowOffsetX: 0,
+          shadowColor: 'rgba(0, 0, 0, 0.5)'
+        }
+      },
+      label: {
+        formatter: '{b}\n{c} 件'
+      }
+    }]
+  })
+}
+
+function renderStockRankChart() {
+  if (!stockRankChartEl.value) return
+  if (!stockRankChart) stockRankChart = echarts.init(stockRankChartEl.value)
+  const items = [...stockData.value.stockRank].reverse()
+  stockRankChart.setOption({
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: params => {
+        const item = params[0]
+        return `${item.name}<br/>库存: ${item.value} 件`
+      }
+    },
+    grid: { left: 140, right: 20, top: 10, bottom: 30 },
+    xAxis: { type: 'value' },
+    yAxis: {
+      type: 'category',
+      data: items.map(i => i.productName),
+      axisLabel: { fontSize: 12 }
+    },
+    series: [{
+      type: 'bar',
+      data: items.map(i => i.stock),
+      itemStyle: {
+        color: '#6366f1',
+        borderRadius: [0, 4, 4, 0]
+      },
+      label: {
+        show: true,
+        position: 'right',
+        formatter: '{c} 件'
+      }
+    }]
+  })
+}
+
 // ---------- 响应式 resize ----------
 function handleResize() {
   trendChart?.resize()
   productChart?.resize()
   customerChart?.resize()
   profitChart?.resize()
+  categoryStockChart?.resize()
+  stockRankChart?.resize()
 }
 
 onMounted(() => {
   loadData()
+  loadStockStatistics()
   if (authStore.isAdmin) {
     loadProfitStatistics()
   }
@@ -325,6 +518,8 @@ onUnmounted(() => {
   productChart?.dispose()
   customerChart?.dispose()
   profitChart?.dispose()
+  categoryStockChart?.dispose()
+  stockRankChart?.dispose()
 })
 </script>
 
@@ -385,6 +580,29 @@ onUnmounted(() => {
 
 .summary-value.profit {
   color: #10b981;
+}
+
+.summary-value.warning {
+  color: #f59e0b;
+}
+
+.summary-value.danger {
+  color: #ef4444;
+}
+
+.section-divider {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 24px 0 16px 0;
+  box-shadow: var(--shadow-md);
+}
+
+.stock-warning-table {
+  margin-top: 12px;
 }
 
 .chart-card {

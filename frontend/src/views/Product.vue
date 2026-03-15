@@ -131,10 +131,10 @@
       <!-- PC端表格视图 -->
       <el-table :data="tableData" class="modern-table desktop-table-view" @row-click="handleRowClick" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
-        <el-table-column prop="id" label="编号" width="80" align="center" />
-        <el-table-column prop="code" label="商品编号" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="name" label="商品名称" min-width="150" show-overflow-tooltip />
-        <el-table-column v-if="visibleCols.category" label="类别" width="100" align="center">
+        <el-table-column prop="id" label="编号" width="70" align="center" />
+        <el-table-column prop="code" label="商品编号" width="110" show-overflow-tooltip />
+        <el-table-column prop="name" label="商品名称" width="140" show-overflow-tooltip />
+        <el-table-column v-if="visibleCols.category" label="类别" width="90" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.categoryId" size="small">
               {{ categoryList.find(c => c.id === row.categoryId)?.name || '-' }}
@@ -142,26 +142,26 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column v-if="visibleCols.unit" prop="unit" label="单位" width="80" align="center" />
-        <el-table-column v-if="visibleCols.stock" prop="stock" label="数量" width="100" align="center">
+        <el-table-column v-if="visibleCols.unit" prop="unit" label="单位" width="70" align="center" />
+        <el-table-column v-if="visibleCols.stock" prop="stock" label="数量" width="90" align="center">
           <template #default="{ row }">
             <el-tag :type="row.stock > 10 ? 'success' : row.stock > 0 ? 'warning' : 'danger'" size="small">
               {{ row.stock }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="price" label="单价" width="120" align="right">
+        <el-table-column prop="price" label="单价" width="110" align="right">
           <template #default="{ row }">
             <span class="price-text">¥{{ row.price?.toFixed(2) || '0.00' }}</span>
           </template>
         </el-table-column>
-        <el-table-column v-if="authStore.isAdmin" prop="cost" label="成本" width="120" align="right">
+        <el-table-column v-if="authStore.isAdmin" prop="cost" label="成本" width="110" align="right">
           <template #default="{ row }">
             <span v-if="row.cost != null" class="cost-text">¥{{ row.cost.toFixed(2) }}</span>
             <el-tag v-else type="info" size="small">未录入</el-tag>
           </template>
         </el-table-column>
-        <el-table-column v-if="authStore.isAdmin" label="利润率" width="100" align="center">
+        <el-table-column v-if="authStore.isAdmin" label="利润率" width="90" align="center">
           <template #default="{ row }">
             <template v-if="row.cost != null && row.price > 0">
               <el-tag
@@ -179,8 +179,8 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column v-if="visibleCols.remark" prop="description" label="备注" min-width="120" show-overflow-tooltip />
-        <el-table-column label="操作" width="200" fixed="right" align="center">
+        <el-table-column v-if="visibleCols.remark" prop="description" label="备注" width="110" show-overflow-tooltip />
+        <el-table-column label="操作" width="200" align="center">
           <template #default="{ row }">
             <div class="action-buttons-grid">
               <el-button type="primary" size="small" @click.stop="handleEdit(row)" icon="Edit">编辑</el-button>

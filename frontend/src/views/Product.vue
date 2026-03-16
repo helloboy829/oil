@@ -144,7 +144,7 @@
         <el-table-column v-if="visibleCols.category" label="类别" width="90" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.categoryId" size="small">
-              {{ categoryList.find(c => c.id === row.categoryId)?.name || '-' }}
+              {{ findCategoryName(row.categoryId) }}
             </el-tag>
             <span v-else>-</span>
           </template>
@@ -406,6 +406,23 @@ const loadCategories = async () => {
   } catch (err) {
     console.error('加载分类列表失败', err)
   }
+}
+
+// 递归查找分类名称（支持树形结构）
+const findCategoryName = (categoryId) => {
+  const findInTree = (categories, id) => {
+    for (const category of categories) {
+      if (category.id === id) {
+        return category.name
+      }
+      if (category.children && category.children.length > 0) {
+        const found = findInTree(category.children, id)
+        if (found) return found
+      }
+    }
+    return null
+  }
+  return findInTree(categoryList.value, categoryId) || '-'
 }
 
 // 加载所有商品名称（点击搜索框时）

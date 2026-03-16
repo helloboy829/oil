@@ -73,6 +73,7 @@
                 <el-checkbox v-model="visibleCols.category" label="类别" />
                 <el-checkbox v-model="visibleCols.unit" label="单位" />
                 <el-checkbox v-model="visibleCols.stock" label="数量" />
+                <el-checkbox v-model="visibleCols.actualPrice" label="实际售价" />
                 <el-checkbox v-model="visibleCols.remark" label="备注" />
               </div>
             </el-popover>
@@ -159,6 +160,12 @@
         <el-table-column prop="price" label="单价" width="110" align="right">
           <template #default="{ row }">
             <span class="price-text">¥{{ row.price?.toFixed(2) || '0.00' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column v-if="visibleCols.actualPrice" prop="actualPrice" label="实际售价" width="110" align="right">
+          <template #default="{ row }">
+            <span v-if="row.actualPrice != null" class="price-text">¥{{ row.actualPrice.toFixed(2) }}</span>
+            <el-tag v-else type="info" size="small">同标准价</el-tag>
           </template>
         </el-table-column>
         <el-table-column v-if="authStore.isAdmin" prop="cost" label="成本" width="110" align="right">
@@ -342,7 +349,7 @@ const formRules = {
 const searchForm = reactive({ name: '', categoryId: null })
 
 // 列可见性控制
-const visibleCols = reactive({ unit: true, stock: true, remark: true, category: true })
+const visibleCols = reactive({ unit: true, stock: true, remark: true, category: true, actualPrice: false })
 
 // 分类列表
 const categoryList = ref([])

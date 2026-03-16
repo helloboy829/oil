@@ -467,7 +467,7 @@ const handleFileUpload = async (file) => {
 // 加载分类列表并构建级联选择器数据
 const loadCategories = async () => {
   try {
-    const categoryRes = await categoryApi.getList()
+    const categoryRes = await categoryApi.getListWithCount()
     categoryList.value = categoryRes.data
 
     // 加载所有商品

@@ -156,15 +156,9 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="price" label="标准单价" width="110" align="right">
+        <el-table-column prop="price" label="单价" width="110" align="right">
           <template #default="{ row }">
             <span class="price-text">¥{{ row.price?.toFixed(2) || '0.00' }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="actualPrice" label="实际售价" width="110" align="right">
-          <template #default="{ row }">
-            <span v-if="row.actualPrice != null" class="price-text">¥{{ row.actualPrice.toFixed(2) }}</span>
-            <el-tag v-else type="info" size="small">使用标准价</el-tag>
           </template>
         </el-table-column>
         <el-table-column v-if="authStore.isAdmin" prop="cost" label="成本" width="110" align="right">

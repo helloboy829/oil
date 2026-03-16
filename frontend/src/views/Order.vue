@@ -191,6 +191,18 @@
         <el-form-item label="备注">
           <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="请输入备注信息" />
         </el-form-item>
+        <el-form-item v-if="authStore.isAdmin" label="创建时间">
+          <el-date-picker
+            v-model="form.createTime"
+            type="datetime"
+            placeholder="选择创建时间"
+            format="YYYY-MM-DD HH:mm:ss"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            clearable
+            style="width: 100%;"
+          />
+          <div class="form-tip">管理员可调整订单创建时间，留空则使用当前时间</div>
+        </el-form-item>
 
         <el-divider content-position="left">
           <span style="font-weight: 600; color: var(--text-main);">商品明细</span>
@@ -410,7 +422,8 @@ const form = reactive({
   customerName: '',
   paymentType: '',
   remark: '',
-  items: []
+  items: [],
+  createTime: null  // 创建时间（管理员可调整）
 })
 
 // 格式化表格数据中的时间
@@ -554,7 +567,8 @@ const handleAdd = () => {
     customerName: '',
     paymentType: '',
     remark: '',
-    items: []
+    items: [],
+    createTime: null
   })
   dialogVisible.value = true
 }
@@ -570,6 +584,7 @@ const handleEdit = async (row) => {
       customerName: res.data.order.customerName,
       paymentType: res.data.order.paymentType,
       remark: res.data.order.remark || '',
+      createTime: res.data.order.createTime,  // 回显创建时间
       items: res.data.items.map(item => ({
         productCode: item.productCode,
         quantity: item.quantity
@@ -907,6 +922,13 @@ onMounted(() => {
 .modern-form :deep(.el-form-item__label) {
   font-weight: 500;
   color: var(--text-secondary);
+}
+
+.form-tip {
+  font-size: 12px;
+  color: var(--text-placeholder);
+  margin-top: 4px;
+  line-height: 1.5;
 }
 
 .dialog-footer {

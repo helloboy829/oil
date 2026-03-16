@@ -67,6 +67,11 @@ public class OrderServiceImpl extends ServiceImpl<OrdersMapper, Orders> implemen
         order.setRemark(orderDTO.getRemark());
         order.setTotalAmount(totalAmount);
 
+        // 如果DTO中传递了创建时间，使用自定义时间（管理员功能）
+        if (orderDTO.getCreateTime() != null) {
+            order.setCreateTime(orderDTO.getCreateTime());
+        }
+
         // 保存订单
         save(order);
 
@@ -179,6 +184,12 @@ public class OrderServiceImpl extends ServiceImpl<OrdersMapper, Orders> implemen
         oldOrder.setPaymentType(orderDTO.getPaymentType());
         oldOrder.setRemark(orderDTO.getRemark());
         oldOrder.setTotalAmount(totalAmount);
+
+        // 如果DTO中传递了创建时间，更新创建时间（管理员功能）
+        if (orderDTO.getCreateTime() != null) {
+            oldOrder.setCreateTime(orderDTO.getCreateTime());
+        }
+
         updateById(oldOrder);
 
         // 保存新订单明细并扣减库存

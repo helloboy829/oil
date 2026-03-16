@@ -8,4 +8,5 @@ public class OrderItemDTO {
     private Long productId;
     private String productCode;
     private Integer quantity;
+    private BigDecimal actualPrice;  // 实际成交价格
 }

@@ -25,6 +25,8 @@ public class OrderItem {
 
     private BigDecimal price;
 
+    private BigDecimal actualPrice;  // 实际成交价格，记录历史售价
+
     private BigDecimal cost;
 
     private Integer quantity;

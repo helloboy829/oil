@@ -14,6 +14,8 @@ public class ProductCategory {
 
     private Integer sort;
 
+    private Long parentId;  // 父分类ID，为null表示顶级分类
+
     @TableLogic
     private Integer deleted;
 

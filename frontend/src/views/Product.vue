@@ -9,6 +9,8 @@
             filterable
             remote
             reserve-keyword
+            allow-create
+            default-first-option
             placeholder="请输入商品名称搜索"
             :remote-method="searchProductName"
             :loading="productNameLoading"
@@ -25,14 +27,18 @@
           </el-select>
         </el-form-item>
         <el-form-item label="商品类别">
-          <el-select v-model="searchForm.categoryId" placeholder="全部类别" clearable style="width: 150px;">
-            <el-option
-              v-for="category in categoryList"
-              :key="category.id"
-              :label="`${category.name} (${category.productCount || 0})`"
-              :value="category.id"
-            />
-          </el-select>
+          <el-tree-select
+            v-model="searchForm.categoryId"
+            :data="categoryList"
+            placeholder="全部类别"
+            clearable
+            filterable
+            check-strictly
+            :render-after-expand="false"
+            style="width: 150px;"
+            node-key="id"
+            :props="{ label: 'name', children: 'children' }"
+          />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="loadData" icon="Search">查询</el-button>
@@ -150,9 +156,15 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="price" label="单价" width="110" align="right">
+        <el-table-column prop="price" label="标准单价" width="110" align="right">
           <template #default="{ row }">
             <span class="price-text">¥{{ row.price?.toFixed(2) || '0.00' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="actualPrice" label="实际售价" width="110" align="right">
+          <template #default="{ row }">
+            <span v-if="row.actualPrice != null" class="price-text">¥{{ row.actualPrice.toFixed(2) }}</span>
+            <el-tag v-else type="info" size="small">使用标准价</el-tag>
           </template>
         </el-table-column>
         <el-table-column v-if="authStore.isAdmin" prop="cost" label="成本" width="110" align="right">
@@ -213,21 +225,29 @@
           <el-input v-model="form.name" placeholder="请输入商品名称" />
         </el-form-item>
         <el-form-item label="商品类别" prop="categoryId">
-          <el-select
+          <el-tree-select
             v-model="form.categoryId"
-            placeholder="请选择或输入新类别"
+            :data="categoryList"
+            placeholder="请选择商品类别"
             filterable
-            allow-create
-            default-first-option
+            check-strictly
+            :render-after-expand="false"
+            clearable
             style="width: 100%;"
+            node-key="id"
+            :props="{ label: 'name', children: 'children' }"
+          />
+          <el-input
+            v-model="newCategoryName"
+            placeholder="或输入新类别名称（回车创建）"
+            @keyup.enter="createNewCategory"
+            clearable
+            style="margin-top: 8px;"
           >
-            <el-option
-              v-for="category in categoryList"
-              :key="category.id"
-              :label="category.name"
-              :value="category.id"
-            />
-          </el-select>
+            <template #append>
+              <el-button @click="createNewCategory" :disabled="!newCategoryName">创建</el-button>
+            </template>
+          </el-input>
         </el-form-item>
         <el-form-item label="单位" prop="unit">
           <el-select v-model="form.unit" placeholder="请选择单位" style="width: 100%;">
@@ -244,8 +264,12 @@
         <el-form-item label="数量" prop="stock">
           <el-input-number v-model="form.stock" :min="0" :step="1" style="width: 100%;" />
         </el-form-item>
-        <el-form-item label="单价" prop="price">
+        <el-form-item label="标准单价" prop="price">
           <el-input-number v-model="form.price" :precision="2" :min="0" :step="0.1" style="width: 100%;" />
+        </el-form-item>
+        <el-form-item label="实际售价">
+          <el-input-number v-model="form.actualPrice" :precision="2" :min="0" clearable style="width: 100%;" placeholder="不填写则使用标准单价" />
+          <div class="form-tip">为空时使用标准单价，可针对老客户设置优惠价</div>
         </el-form-item>
         <el-form-item v-if="authStore.isAdmin" label="成本价">
           <el-input-number v-model="form.cost" :precision="2" :min="0" clearable style="width: 100%;" placeholder="不填写成本时，该商品不参与利润统计" />
@@ -329,6 +353,9 @@ const visibleCols = reactive({ unit: true, stock: true, remark: true, category: 
 // 分类列表
 const categoryList = ref([])
 
+// 新增分类名称
+const newCategoryName = ref('')
+
 // 搜索下拉列表
 const productNameList = ref([])
 const productNameLoading = ref(false)
@@ -346,6 +373,7 @@ const form = reactive({
   spec: '',  // 保留字段（后端兼容）
   unit: '只',  // 默认单位改为"只"
   price: 0,
+  actualPrice: null,  // 实际售卖价格
   stock: 0,
   cost: null,
   categoryId: null
@@ -425,7 +453,7 @@ const handleAdd = () => {
   // 查找"其他"类别的ID作为默认值
   const otherCategory = categoryList.value.find(cat => cat.name === '其他')
   const defaultCategoryId = otherCategory ? otherCategory.id : null
-  Object.assign(form, { id: null, name: '', code: '', spec: '', unit: '只', price: 0, stock: 0, cost: null, categoryId: defaultCategoryId })
+  Object.assign(form, { id: null, name: '', code: '', spec: '', unit: '只', price: 0, actualPrice: null, stock: 0, cost: null, categoryId: defaultCategoryId })
   dialogVisible.value = true
 }
 
@@ -433,6 +461,55 @@ const handleEdit = (row) => {
   dialogTitle.value = '编辑商品'
   Object.assign(form, row)
   dialogVisible.value = true
+}
+
+// 创建新分类
+const createNewCategory = async () => {
+  if (!newCategoryName.value || !newCategoryName.value.trim()) {
+    ElMessage.warning('请输入分类名称')
+    return
+  }
+
+  const categoryName = newCategoryName.value.trim()
+
+  try {
+    // 递归查找是否存在同名分类
+    const findCategory = (categories, name) => {
+      for (const cat of categories) {
+        if (cat.name === name) return cat
+        if (cat.children) {
+          const found = findCategory(cat.children, name)
+          if (found) return found
+        }
+      }
+      return null
+    }
+
+    const existingCategory = findCategory(categoryList.value, categoryName)
+
+    if (existingCategory) {
+      ElMessage.warning(`分类"${categoryName}"已存在`)
+      form.categoryId = existingCategory.id
+      newCategoryName.value = ''
+      return
+    }
+
+    // 创建新类别（默认为顶级分类）
+    const newCategory = {
+      name: categoryName,
+      parentId: null,
+      sort: 0
+    }
+
+    const res = await categoryApi.add(newCategory)
+    await loadCategories()
+
+    form.categoryId = res.data.id || res.data
+    newCategoryName.value = ''
+    ElMessage.success(`已创建新分类：${categoryName}`)
+  } catch (error) {
+    ElMessage.error('创建分类失败：' + (error.response?.data?.message || error.message || '未知错误'))
+  }
 }
 
 const handleSubmit = async () => {
@@ -447,31 +524,6 @@ const handleSubmit = async () => {
   }
 
   try {
-    // 检查类别是否为新输入的（字符串类型）
-    if (typeof form.categoryId === 'string') {
-      const categoryName = form.categoryId.trim()
-      // 先检查是否已存在同名类别
-      const existingCategory = categoryList.value.find(c => c.name === categoryName)
-      if (existingCategory) {
-        // 如果已存在，使用已有类别的ID
-        form.categoryId = existingCategory.id
-      } else {
-        // 创建新类别
-        const maxSort = categoryList.value.length > 0
-          ? Math.max(...categoryList.value.map(c => c.sort || 0))
-          : 0
-        const newCategory = {
-          name: categoryName,
-          sort: maxSort + 1
-        }
-        const res = await categoryApi.add(newCategory)
-        form.categoryId = res.data.id || res.data
-        // 重新加载类别列表
-        await loadCategories()
-        ElMessage.success(`已创建新类别：${categoryName}`)
-      }
-    }
-
     // 提交商品数据
     if (form.id) {
       await productApi.update(form)

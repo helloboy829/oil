@@ -77,7 +77,22 @@
         <div v-for="(item, index) in cart" :key="index" class="cart-item">
           <div class="item-info">
             <div class="item-name">{{ item.name }}</div>
-            <div class="item-price">¥{{ item.price }} × {{ item.quantity }}</div>
+            <div class="item-price-section">
+              <div class="price-label">标准价：¥{{ item.originalPrice }}</div>
+              <div class="actual-price-input">
+                <span class="price-label">实际售价：</span>
+                <el-input-number
+                  v-model="item.actualPrice"
+                  :precision="2"
+                  :min="0"
+                  :step="0.1"
+                  size="small"
+                  style="width: 120px;"
+                  @change="updateItemTotal(index)"
+                />
+              </div>
+              <div class="item-subtotal">小计：¥{{ (item.actualPrice * item.quantity).toFixed(2) }}</div>
+            </div>
           </div>
 
           <div class="item-actions">
@@ -286,7 +301,7 @@ const orderRules = {
 // 计算总金额
 const totalAmount = computed(() => {
   return cart.value.reduce((sum, item) => {
-    return sum + (item.price * item.quantity)
+    return sum + (item.actualPrice * item.quantity)
   }, 0).toFixed(2)
 })
 
@@ -462,20 +477,30 @@ const loadCategories = async () => {
     })
     const allProducts = productRes.data?.records || []
 
-    // 构建级联选择器数据结构
-    cascaderOptions.value = categoryList.value.map(category => ({
-      value: category.id,
-      label: category.name,
-      children: allProducts
-        .filter(p => p.categoryId === category.id)
-        .map(product => ({
+    // 构建级联选择器数据结构（支持树形分类）
+    const buildCascaderOptions = (categories, allProducts) => {
+      return categories.map(category => {
+        const categoryProducts = allProducts.filter(p => p.categoryId === category.id)
+        const productChildren = categoryProducts.map(product => ({
           value: product.id,
           label: product.name,
           price: product.price,
           stock: product.stock,
-          product: product // 保存完整商品信息
+          product: product,
+          leaf: true // 标记为叶子节点
         }))
-    }))
+
+        const subCategories = category.children ? buildCascaderOptions(category.children, allProducts) : []
+
+        return {
+          value: category.id,
+          label: category.name,
+          children: [...subCategories, ...productChildren]
+        }
+      })
+    }
+
+    cascaderOptions.value = buildCascaderOptions(categoryList.value, allProducts)
   } catch (err) {
     console.error('加载分类列表失败', err)
   }
@@ -487,16 +512,32 @@ const handleCascaderChange = (value) => {
     return
   }
 
-  const [categoryId, productId] = value
+  // 获取最后一个ID（产品ID）
+  const productId = value[value.length - 1]
 
-  // 从级联选择器中找到选中的商品
-  const category = cascaderOptions.value.find(c => c.value === categoryId)
-  if (!category) return
+  // 递归查找产品节点
+  const findProduct = (options, path, index) => {
+    if (index >= path.length) return null
 
-  const productNode = category.children.find(p => p.value === productId)
-  if (!productNode) return
+    const currentId = path[index]
+    const node = options.find(opt => opt.value === currentId)
+    if (!node) return null
 
-  const product = productNode.product
+    // 如果是最后一层且有product属性，说明找到了产品
+    if (index === path.length - 1 && node.product) {
+      return node.product
+    }
+
+    // 继续向下查找
+    if (node.children && node.children.length > 0) {
+      return findProduct(node.children, path, index + 1)
+    }
+
+    return null
+  }
+
+  const product = findProduct(cascaderOptions.value, value, 0)
+  if (!product) return
 
   // 添加到购物车
   addProduct(product)
@@ -559,6 +600,8 @@ const addProduct = (product) => {
       name: product.name,
       code: product.code,
       price: product.price,
+      originalPrice: product.price,  // 保存标准价格
+      actualPrice: product.actualPrice || product.price,  // 实际售价，默认使用actualPrice或price
       stock: product.stock,
       quantity: 1
     })
@@ -585,6 +628,12 @@ const decreaseQuantity = (index) => {
   if (item.quantity > 1) {
     item.quantity--
   }
+}
+
+// 更新商品小计（实际售价改变时触发）
+const updateItemTotal = (index) => {
+  // 这个函数主要是为了触发响应式更新
+  // 实际计算已经在模板中完成
 }
 
 // 删除商品
@@ -763,7 +812,8 @@ const submitOrder = async () => {
     const items = cart.value.map(item => ({
       productId: item.id,
       productCode: item.code,
-      quantity: item.quantity
+      quantity: item.quantity,
+      actualPrice: item.actualPrice  // 传递实际售价
     }))
 
     await orderApi.create({

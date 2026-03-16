@@ -23,6 +23,8 @@ public class Product {
 
     private BigDecimal price;
 
+    private BigDecimal actualPrice;  // 实际售卖价格，为空时使用price
+
     private BigDecimal cost;
 
     private Integer stock;

@@ -51,7 +51,10 @@ public class OrderServiceImpl extends ServiceImpl<OrdersMapper, Orders> implemen
             if (product.getStock() < itemDTO.getQuantity()) {
                 throw new RuntimeException("商品库存不足: " + product.getName() + " (库存: " + product.getStock() + ")");
             }
-            BigDecimal subtotal = product.getPrice().multiply(new BigDecimal(itemDTO.getQuantity()));
+
+            // 使用实际售价计算小计，如果没有实际售价则使用标准价格
+            BigDecimal finalPrice = itemDTO.getActualPrice() != null ? itemDTO.getActualPrice() : product.getPrice();
+            BigDecimal subtotal = finalPrice.multiply(new BigDecimal(itemDTO.getQuantity()));
             totalAmount = totalAmount.add(subtotal);
         }
 
@@ -80,6 +83,9 @@ public class OrderServiceImpl extends ServiceImpl<OrdersMapper, Orders> implemen
             }
 
             if (product != null) {
+                // 使用实际售价，如果没有则使用标准价格
+                BigDecimal finalPrice = itemDTO.getActualPrice() != null ? itemDTO.getActualPrice() : product.getPrice();
+
                 OrderItem item = new OrderItem();
                 item.setOrderId(order.getId());
                 item.setProductId(product.getId());
@@ -87,14 +93,15 @@ public class OrderServiceImpl extends ServiceImpl<OrdersMapper, Orders> implemen
                 item.setProductCode(product.getCode());
                 item.setProductSpec(product.getSpec());
                 item.setUnit(product.getUnit());
-                item.setPrice(product.getPrice());
+                item.setPrice(product.getPrice());  // 保存标准价格
+                item.setActualPrice(finalPrice);    // 保存实际成交价格
                 item.setQuantity(itemDTO.getQuantity());
-                item.setSubtotal(product.getPrice().multiply(new BigDecimal(itemDTO.getQuantity())));
+                item.setSubtotal(finalPrice.multiply(new BigDecimal(itemDTO.getQuantity())));
 
-                // 计算利润（如果商品有成本）
+                // 计算利润（使用实际售价计算）
                 if (product.getCost() != null) {
                     item.setCost(product.getCost());
-                    BigDecimal profit = product.getPrice()
+                    BigDecimal profit = finalPrice
                             .subtract(product.getCost())
                             .multiply(new BigDecimal(itemDTO.getQuantity()));
                     item.setProfit(profit);

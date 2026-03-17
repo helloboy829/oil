@@ -584,7 +584,7 @@ const handleEdit = async (row) => {
       customerName: res.data.order.customerName,
       paymentType: res.data.order.paymentType,
       remark: res.data.order.remark || '',
-      createTime: res.data.order.createTime,  // 回显创建时间
+      createTime: formatDateTime(res.data.order.createTime),  // 回显创建时间（统一为 yyyy-MM-dd HH:mm:ss）
       items: res.data.items.map(item => ({
         productCode: item.productCode,
         quantity: item.quantity

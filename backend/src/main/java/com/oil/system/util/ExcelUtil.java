@@ -96,10 +96,16 @@ public class ExcelUtil {
                 List<OrderItem> items = orderItemService.list(wrapper);
 
                 for (OrderItem item : items) {
+                    // 检查商品是否存在（过滤已删除的商品）
+                    Product product = productService.getById(item.getProductId());
+                    if (product == null) {
+                        // 商品已被删除，跳过此明细
+                        continue;
+                    }
+
                     // 如果指定了类别筛选，检查商品是否属于指定类别
                     if (categoryIds != null && !categoryIds.isEmpty()) {
-                        Product product = productService.getById(item.getProductId());
-                        if (product == null || !categoryIds.contains(product.getCategoryId())) {
+                        if (!categoryIds.contains(product.getCategoryId())) {
                             continue; // 跳过不符合类别筛选的商品
                         }
                     }

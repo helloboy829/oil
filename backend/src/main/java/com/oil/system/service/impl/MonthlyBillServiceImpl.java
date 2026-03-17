@@ -179,10 +179,23 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
         } else {
             // 兼容旧账单：按日期范围查询
             String billMonth = bill.getBillMonth();
-            YearMonth yearMonth = YearMonth.parse(billMonth);
-            int lastDay = yearMonth.lengthOfMonth();
-            String startTime = billMonth + "-01 00:00:00";
-            String endTime = billMonth + "-" + String.format("%02d", lastDay) + " 23:59:59";
+            String startTime;
+            String endTime;
+
+            // 判断是月份格式还是日期范围格式
+            if (billMonth.contains("至")) {
+                // 日期范围格式：2026-03-15至2026-03-17
+                String[] dates = billMonth.split("至");
+                startTime = dates[0] + " 00:00:00";
+                endTime = dates[1] + " 23:59:59";
+            } else {
+                // 月份格式：2026-03
+                YearMonth yearMonth = YearMonth.parse(billMonth);
+                int lastDay = yearMonth.lengthOfMonth();
+                startTime = billMonth + "-01 00:00:00";
+                endTime = billMonth + "-" + String.format("%02d", lastDay) + " 23:59:59";
+            }
+
             LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(Orders::getCustomerId, bill.getCustomerId())
                     .ge(Orders::getCreateTime, startTime)
@@ -222,10 +235,23 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
             orders = orderService.list(wrapper);
         } else {
             String billMonth = bill.getBillMonth();
-            YearMonth yearMonth = YearMonth.parse(billMonth);
-            int lastDay = yearMonth.lengthOfMonth();
-            String startTime = billMonth + "-01 00:00:00";
-            String endTime = billMonth + "-" + String.format("%02d", lastDay) + " 23:59:59";
+            String startTime;
+            String endTime;
+
+            // 判断是月份格式还是日期范围格式
+            if (billMonth.contains("至")) {
+                // 日期范围格式：2026-03-15至2026-03-17
+                String[] dates = billMonth.split("至");
+                startTime = dates[0] + " 00:00:00";
+                endTime = dates[1] + " 23:59:59";
+            } else {
+                // 月份格式：2026-03
+                YearMonth yearMonth = YearMonth.parse(billMonth);
+                int lastDay = yearMonth.lengthOfMonth();
+                startTime = billMonth + "-01 00:00:00";
+                endTime = billMonth + "-" + String.format("%02d", lastDay) + " 23:59:59";
+            }
+
             LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(Orders::getCustomerId, bill.getCustomerId())
                     .ge(Orders::getCreateTime, startTime)
@@ -250,10 +276,16 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
             List<OrderItem> orderItems = orderItemService.list(itemWrapper);
 
             for (OrderItem item : orderItems) {
+                // 检查商品是否存在（过滤已删除的商品）
+                Product product = productService.getById(item.getProductId());
+                if (product == null) {
+                    // 商品已被删除，跳过此明细
+                    continue;
+                }
+
                 // 如果指定了类别筛选，检查商品是否属于指定类别
                 if (categoryIds != null && !categoryIds.isEmpty()) {
-                    Product product = productService.getById(item.getProductId());
-                    if (product == null || !categoryIds.contains(product.getCategoryId())) {
+                    if (!categoryIds.contains(product.getCategoryId())) {
                         continue;
                     }
                 }

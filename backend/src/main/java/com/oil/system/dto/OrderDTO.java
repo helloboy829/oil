@@ -1,4 +1,4 @@
-﻿package com.oil.system.dto;
+package com.oil.system.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;

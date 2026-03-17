@@ -60,9 +60,29 @@ public class CustomerController {
      * 新增客户
      */
     @PostMapping
-    public Result<Void> save(@RequestBody Customer customer) {
+    public Result<Customer> save(@RequestBody Customer customer) {
+        if (customer == null || customer.getName() == null || customer.getName().trim().isEmpty()) {
+            return Result.error("客户姓名不能为空");
+        }
+
+        String name = customer.getName().trim();
+        // 如果已存在同名客户（未被删除），直接返回，避免重复
+        LambdaQueryWrapper<Customer> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Customer::getName, name).eq(Customer::getDeleted, 0).last("limit 1");
+        Customer existing = customerService.getOne(wrapper);
+        if (existing != null) {
+            return Result.success(existing);
+        }
+
+        customer.setName(name);
+        if (customer.getIsMonthly() == null) {
+            customer.setIsMonthly(0);
+        }
+        if (customer.getDeleted() == null) {
+            customer.setDeleted(0);
+        }
         customerService.save(customer);
-        return Result.success();
+        return Result.success(customer);
     }
 
     /**

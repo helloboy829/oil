@@ -155,6 +155,8 @@
             v-model="orderForm.customerName"
             filterable
             remote
+            allow-create
+            default-first-option
             reserve-keyword
             placeholder="请输入客户姓名搜索"
             :remote-method="searchCustomers"
@@ -162,8 +164,8 @@
             size="large"
             style="width: 100%;"
             clearable
-            @change="handleCustomerChange"
-            @focus="loadAllCustomers"
+          @change="handleCustomerChange"
+          @focus="loadAllCustomers"
           >
             <el-option
               v-for="customer in customerList"
@@ -740,7 +742,29 @@ const searchCustomers = async (query) => {
 }
 
 // 客户选择变化
-const handleCustomerChange = (customerName) => {
+const createCustomerIfNeeded = async (name) => {
+  if (!name || !name.trim()) return null
+
+  const createRes = await customerApi.add({
+    name: name.trim(),
+    isMonthly: isMonthlyCustomer.value ? 1 : 0
+  })
+
+  if (createRes?.data?.id) {
+    const created = createRes.data
+    selectedCustomer.value = created
+    orderForm.value.customerName = created.name
+    if (!allCustomers.value.some(c => c.id === created.id)) {
+      allCustomers.value = [created, ...allCustomers.value]
+    }
+    customerList.value = allCustomers.value
+    return created
+  }
+
+  return null
+}
+
+const handleCustomerChange = async (customerName) => {
   // 查找选中的客户
   const customer = customerList.value.find(c => c.name === customerName)
   if (customer) {
@@ -755,9 +779,20 @@ const handleCustomerChange = (customerName) => {
         orderForm.value.paymentType = '未知'
       }
     }
-  } else {
-    selectedCustomer.value = null
-    isMonthlyCustomer.value = false
+    return
+  }
+
+  selectedCustomer.value = null
+  isMonthlyCustomer.value = false
+
+  // allow-create: 回车确认后自动创建并选中
+  if (customerName && customerName.trim()) {
+    try {
+      await createCustomerIfNeeded(customerName)
+    } catch (err) {
+      ElMessage.error('创建客户失败')
+      console.error('创建客户失败:', err)
+    }
   }
 }
 
@@ -785,26 +820,46 @@ const submitOrder = async () => {
   submitting.value = true
 
   try {
+    const inputName = (orderForm.value.customerName || '').trim()
+
     // 如果没有选中客户，尝试通过客户名模糊匹配
     let customerId = selectedCustomer.value?.id
-    if (!customerId && orderForm.value.customerName) {
+    if (!customerId && inputName) {
       // 确保客户列表已加载
       if (allCustomers.value.length === 0) {
         await loadAllCustomers()
       }
       // 模糊匹配客户
       const matchedCustomer = allCustomers.value.find(c =>
-        c.name.toLowerCase().includes(orderForm.value.customerName.toLowerCase()) ||
-        orderForm.value.customerName.toLowerCase().includes(c.name.toLowerCase())
+        c.name.toLowerCase().includes(inputName.toLowerCase()) ||
+        inputName.toLowerCase().includes(c.name.toLowerCase())
       )
       if (matchedCustomer) {
         customerId = matchedCustomer.id
+        orderForm.value.customerName = matchedCustomer.name
       }
     }
 
-    // 如果还是没有customerId，提示用户
+    // 如果仍未匹配到客户，则自动创建
+    if (!customerId && inputName) {
+      const createRes = await customerApi.add({
+        name: inputName,
+        isMonthly: isMonthlyCustomer.value ? 1 : 0
+      })
+      if (createRes?.data?.id) {
+        customerId = createRes.data.id
+        selectedCustomer.value = createRes.data
+        orderForm.value.customerName = createRes.data.name
+        // 更新缓存，便于后续选择（避免重复）
+        if (!allCustomers.value.some(c => c.id === createRes.data.id)) {
+          allCustomers.value = [createRes.data, ...allCustomers.value]
+        }
+        customerList.value = allCustomers.value
+      }
+    }
+
     if (!customerId) {
-      ElMessage.error('请从下拉列表中选择客户，或先在客户管理中添加该客户')
+      ElMessage.error('请填写客户姓名')
       submitting.value = false
       return
     }

@@ -33,10 +33,12 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
 
     @Override
     @Transactional
-    public MonthlyBill generateMonthlyBill(Long customerId, String billMonth, List<Long> categoryIds) {
+    public MonthlyBill generateMonthlyBill(Long customerId, String billMonth, String startDate, String endDate, List<Long> categoryIds) {
         System.out.println("===== 生成月结账单 =====");
         System.out.println("客户ID: " + customerId);
         System.out.println("账单月份: " + billMonth);
+        System.out.println("开始日期: " + startDate);
+        System.out.println("结束日期: " + endDate);
         System.out.println("类别IDs: " + categoryIds);
 
         Customer customer = customerService.getById(customerId);
@@ -44,13 +46,28 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
             throw new RuntimeException("客户不存在");
         }
 
-        // 查询该月的所有订单（不限制支付方式，支持所有客户）
-        // 解析账单月份，例如 "2026-02" -> 2026年2月1日 00:00:00 到 2026年2月28日 23:59:59
-        YearMonth yearMonth = YearMonth.parse(billMonth);
-        int lastDay = yearMonth.lengthOfMonth(); // 获取该月的实际天数
-        String startTime = billMonth + "-01 00:00:00";
-        String endTime = billMonth + "-" + String.format("%02d", lastDay) + " 23:59:59";
+        // 确定时间范围
+        String startTime;
+        String endTime;
+        String displayPeriod; // 用于显示的账单周期
 
+        if (billMonth != null && !billMonth.isEmpty()) {
+            // 按月份模式
+            YearMonth yearMonth = YearMonth.parse(billMonth);
+            int lastDay = yearMonth.lengthOfMonth();
+            startTime = billMonth + "-01 00:00:00";
+            endTime = billMonth + "-" + String.format("%02d", lastDay) + " 23:59:59";
+            displayPeriod = billMonth;
+        } else if (startDate != null && !startDate.isEmpty() && endDate != null && !endDate.isEmpty()) {
+            // 按日期范围模式
+            startTime = startDate + " 00:00:00";
+            endTime = endDate + " 23:59:59";
+            displayPeriod = startDate + "至" + endDate;
+        } else {
+            throw new RuntimeException("请指定账单月份或日期范围");
+        }
+
+        // 查询该时间范围的所有订单
         LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Orders::getCustomerId, customerId)
                 .ge(Orders::getCreateTime, startTime)
@@ -106,7 +123,7 @@ public class MonthlyBillServiceImpl extends ServiceImpl<MonthlyBillMapper, Month
         bill.setBillNo(generateBillNo());
         bill.setCustomerId(customerId);
         bill.setCustomerName(customer.getName());
-        bill.setBillMonth(billMonth);
+        bill.setBillMonth(displayPeriod); // 存储显示用的周期字符串
         bill.setTotalAmount(totalAmount);
         bill.setPaidAmount(BigDecimal.ZERO);
         bill.setOrderIds(orderIds);

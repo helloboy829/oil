@@ -162,7 +162,13 @@
             </el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="账单月份" prop="billMonth">
+        <el-form-item label="时间选择">
+          <el-radio-group v-model="form.dateMode" style="width: 100%;">
+            <el-radio label="month">按月份</el-radio>
+            <el-radio label="dateRange">按日期范围</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="form.dateMode === 'month'" label="账单月份" prop="billMonth">
           <el-date-picker
             v-model="form.billMonth"
             type="month"
@@ -173,16 +179,29 @@
             style="width: 100%;"
           />
         </el-form-item>
+        <el-form-item v-if="form.dateMode === 'dateRange'" label="日期范围" prop="dateRange">
+          <el-date-picker
+            v-model="form.dateRange"
+            type="daterange"
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD"
+            :disabled-date="disabledDate"
+            style="width: 100%;"
+          />
+        </el-form-item>
         <el-form-item label="商品类别">
-          <el-checkbox-group v-model="form.categoryIds">
-            <el-checkbox
-              v-for="category in categoryList"
-              :key="category.id"
-              :label="category.id"
-            >
-              {{ category.name }}
-            </el-checkbox>
-          </el-checkbox-group>
+          <el-tree
+            ref="categoryTreeRef"
+            :data="categoryTree"
+            show-checkbox
+            node-key="id"
+            :props="{ children: 'children', label: 'label' }"
+            :default-checked-keys="form.categoryIds"
+            style="width: 100%;"
+          />
           <div style="font-size: 12px; color: #999; margin-top: 4px;">
             不选择表示统计所有类别
           </div>
@@ -294,6 +313,7 @@ import { formatDateTime } from '@/utils/format'
 
 // 表单引用
 const formRef = ref(null)
+const categoryTreeRef = ref(null)
 
 // 表单验证规则
 const formRules = {
@@ -313,9 +333,12 @@ const currentBill = ref(null)
 const customers = ref([])
 const selectedRows = ref([])
 const categoryList = ref([])
+const categoryTree = ref([]) // 树形结构的分类数据
 const form = reactive({
   customerId: null,
   billMonth: '',
+  dateRange: null,
+  dateMode: 'month', // 'month' 或 'dateRange'
   categoryIds: []
 })
 
@@ -349,14 +372,52 @@ const loadCategories = async () => {
   try {
     const res = await categoryApi.getList()
     categoryList.value = res.data
+    // 构建树形结构
+    categoryTree.value = buildCategoryTree(res.data)
   } catch (err) {
     console.error('加载分类列表失败', err)
   }
 }
 
+// 构建树形结构
+const buildCategoryTree = (categories) => {
+  const map = {}
+  const tree = []
+
+  // 先创建所有节点的映射
+  categories.forEach(cat => {
+    map[cat.id] = {
+      id: cat.id,
+      label: cat.name,
+      children: []
+    }
+  })
+
+  // 构建树形结构
+  categories.forEach(cat => {
+    if (cat.parentId === null || cat.parentId === 0) {
+      // 顶级分类
+      tree.push(map[cat.id])
+    } else {
+      // 子分类
+      if (map[cat.parentId]) {
+        map[cat.parentId].children.push(map[cat.id])
+      }
+    }
+  })
+
+  return tree
+}
+
 const handleGenerate = () => {
-  Object.assign(form, { customerId: null, billMonth: '', categoryIds: [] })
+  Object.assign(form, { customerId: null, billMonth: '', dateRange: null, dateMode: 'month', categoryIds: [] })
   dialogVisible.value = true
+  // 重置树形选择器
+  setTimeout(() => {
+    if (categoryTreeRef.value) {
+      categoryTreeRef.value.setCheckedKeys([])
+    }
+  }, 100)
 }
 
 const handleSubmit = async () => {
@@ -370,11 +431,39 @@ const handleSubmit = async () => {
     return
   }
 
-  await monthlyBillApi.generate({
-    customerId: form.customerId,
-    billMonth: form.billMonth,
-    categoryIds: form.categoryIds.length > 0 ? form.categoryIds : null
-  })
+  // 根据选择的模式构建请求参数
+  const params = {
+    customerId: form.customerId
+  }
+
+  if (form.dateMode === 'month') {
+    // 按月份模式
+    if (!form.billMonth) {
+      ElMessage.warning('请选择账单月份')
+      return
+    }
+    params.billMonth = form.billMonth
+  } else {
+    // 按日期范围模式
+    if (!form.dateRange || form.dateRange.length !== 2) {
+      ElMessage.warning('请选择日期范围')
+      return
+    }
+    params.startDate = form.dateRange[0]
+    params.endDate = form.dateRange[1]
+  }
+
+  // 从树形选择器获取选中的节点（包括半选中的父节点）
+  if (categoryTreeRef.value) {
+    const checkedKeys = categoryTreeRef.value.getCheckedKeys()
+    const halfCheckedKeys = categoryTreeRef.value.getHalfCheckedKeys()
+    const allSelectedIds = [...checkedKeys, ...halfCheckedKeys]
+    params.categoryIds = allSelectedIds.length > 0 ? allSelectedIds : null
+  } else {
+    params.categoryIds = null
+  }
+
+  await monthlyBillApi.generate(params)
   ElMessage.success('生成成功')
   dialogVisible.value = false
   await loadData()

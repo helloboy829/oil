@@ -143,7 +143,8 @@ public class StatisticsController {
         List<ProfitStatisticsVO.ProductProfitRank> productRank = new ArrayList<>();
         for (Map<String, Object> map : productData) {
             String productName = (String) map.get("productName");
-            Long quantity = (Long) map.get("quantity");
+            Number quantityNum = (Number) map.get("quantity");
+            Long quantity = quantityNum != null ? quantityNum.longValue() : 0L;
             BigDecimal totalProfit = (BigDecimal) map.get("totalProfit");
             BigDecimal avgProfitRate = (BigDecimal) map.get("avgProfitRate");
             productRank.add(new ProfitStatisticsVO.ProductProfitRank(
@@ -157,7 +158,8 @@ public class StatisticsController {
         List<ProfitStatisticsVO.CustomerProfitRank> customerRank = new ArrayList<>();
         for (Map<String, Object> map : customerData) {
             String customerName = (String) map.get("customerName");
-            Long orderCount = (Long) map.get("orderCount");
+            Number orderCountNum = (Number) map.get("orderCount");
+            Long orderCount = orderCountNum != null ? orderCountNum.longValue() : 0L;
             BigDecimal totalProfit = (BigDecimal) map.get("totalProfit");
             customerRank.add(new ProfitStatisticsVO.CustomerProfitRank(
                     customerName, orderCount.intValue(), totalProfit
@@ -168,7 +170,8 @@ public class StatisticsController {
         // 4. 利润汇总
         Map<String, Object> summary = orderItemMapper.selectProfitSummary();
         BigDecimal totalProfit = (BigDecimal) summary.get("totalProfit");
-        Long profitableProductCount = (Long) summary.get("profitableProductCount");
+        Number profitableProductCountNum = (Number) summary.get("profitableProductCount");
+        Long profitableProductCount = profitableProductCountNum != null ? profitableProductCountNum.longValue() : 0L;
 
         vo.setTotalProfit(totalProfit != null ? totalProfit : BigDecimal.ZERO);
         vo.setProfitableProductCount(profitableProductCount != null ? profitableProductCount.intValue() : 0);

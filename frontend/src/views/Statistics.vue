@@ -274,16 +274,17 @@ async function loadProfitStatistics() {
       start: dateRange.value[0],
       end: dateRange.value[1],
     })
-    profitData.value = res.data || {
-      trend: [],
+    const data = res.data || {}
+    profitData.value = {
+      trend: data.profitTrend || [],
       summary: {
-        totalProfit: 0,
-        avgProfitRate: 0,
-        calculableCount: 0,
-        topProfitProduct: '-'
+        totalProfit: Number(data.totalProfit || 0),
+        avgProfitRate: Number(data.avgProfitRate || 0),
+        calculableCount: Number(data.profitableProductCount || 0),
+        topProfitProduct: data.topProfitProduct || '-'
       },
-      productRank: [],
-      customerRank: []
+      productRank: data.productRank || [],
+      customerRank: data.customerRank || []
     }
     await nextTick()
     renderProfitChart()

@@ -13,36 +13,64 @@ import java.util.Map;
 @Mapper
 public interface OrderItemMapper extends BaseMapper<OrderItem> {
 
-    @Select("SELECT oi.product_name AS productName, " +
+    @Select("<script>" +
+            "SELECT oi.product_name AS productName, " +
             "SUM(oi.quantity) AS totalQuantity, SUM(oi.subtotal) AS totalAmount " +
             "FROM order_item oi " +
             "JOIN orders o ON oi.order_id = o.id " +
             "WHERE oi.deleted = 0 AND o.deleted = 0 " +
-            "AND o.create_time >= #{startDate} AND o.create_time <= #{endDate} " +
-            "GROUP BY oi.product_name ORDER BY totalAmount DESC LIMIT #{limit}")
+            "<if test='startDate != null'> AND o.create_time &gt;= #{startDate} </if>" +
+            "<if test='endDate != null'> AND o.create_time &lt;= #{endDate} </if>" +
+            "<if test='customerId != null'> AND o.customer_id = #{customerId} </if>" +
+            "<if test='productId != null'> AND oi.product_id = #{productId} </if>" +
+            "GROUP BY oi.product_name ORDER BY totalAmount DESC LIMIT #{limit}" +
+            "</script>")
     List<StatisticsVO.ProductRankItem> selectProductRank(@Param("startDate") String startDate,
                                                           @Param("endDate") String endDate,
+                                                          @Param("customerId") Long customerId,
+                                                          @Param("productId") Long productId,
                                                           @Param("limit") int limit);
 
-    @Select("SELECT o.customer_name AS customerName, " +
+    @Select("<script>" +
+            "SELECT o.customer_name AS customerName, " +
             "SUM(o.total_amount) AS totalAmount, COUNT(o.id) AS orderCount " +
             "FROM orders o " +
             "WHERE o.deleted = 0 " +
-            "AND o.create_time >= #{startDate} AND o.create_time <= #{endDate} " +
             "AND o.customer_name IS NOT NULL AND o.customer_name != '' " +
-            "GROUP BY o.customer_name ORDER BY totalAmount DESC LIMIT #{limit}")
+            "<if test='startDate != null'> AND o.create_time &gt;= #{startDate} </if>" +
+            "<if test='endDate != null'> AND o.create_time &lt;= #{endDate} </if>" +
+            "<if test='customerId != null'> AND o.customer_id = #{customerId} </if>" +
+            "<if test='productId != null'> AND EXISTS (" +
+                "SELECT 1 FROM order_item oi " +
+                "WHERE oi.order_id = o.id AND oi.product_id = #{productId} AND oi.deleted = 0" +
+            ") </if>" +
+            "GROUP BY o.customer_name ORDER BY totalAmount DESC LIMIT #{limit}" +
+            "</script>")
     List<StatisticsVO.CustomerRankItem> selectCustomerRank(@Param("startDate") String startDate,
                                                             @Param("endDate") String endDate,
+                                                            @Param("customerId") Long customerId,
+                                                            @Param("productId") Long productId,
                                                             @Param("limit") int limit);
 
     // 利润统计相关查询
     List<Map<String, Object>> selectProfitTrend(@Param("fmt") String fmt,
                                                  @Param("startDate") String startDate,
-                                                 @Param("endDate") String endDate);
+                                                 @Param("endDate") String endDate,
+                                                 @Param("customerId") Long customerId,
+                                                 @Param("productId") Long productId);
 
-    List<Map<String, Object>> selectProductProfitRank();
+    List<Map<String, Object>> selectProductProfitRank(@Param("startDate") String startDate,
+                                                       @Param("endDate") String endDate,
+                                                       @Param("customerId") Long customerId,
+                                                       @Param("productId") Long productId);
 
-    List<Map<String, Object>> selectCustomerProfitRank();
+    List<Map<String, Object>> selectCustomerProfitRank(@Param("startDate") String startDate,
+                                                        @Param("endDate") String endDate,
+                                                        @Param("customerId") Long customerId,
+                                                        @Param("productId") Long productId);
 
-    Map<String, Object> selectProfitSummary();
+    Map<String, Object> selectProfitSummary(@Param("startDate") String startDate,
+                                             @Param("endDate") String endDate,
+                                             @Param("customerId") Long customerId,
+                                             @Param("productId") Long productId);
 }

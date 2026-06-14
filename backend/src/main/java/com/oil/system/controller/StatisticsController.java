@@ -43,24 +43,26 @@ public class StatisticsController {
      * @param type  趋势粒度：day / week / month
      * @param start 开始日期，如 2026-01-01
      * @param end   结束日期，如 2026-03-13
+     * @param customerId 客户ID（可选）
+     * @param productId 商品ID（可选）
      */
     @GetMapping
     public Result<StatisticsVO> getStatistics(
             @RequestParam(defaultValue = "day") String type,
             @RequestParam(required = false) String start,
-            @RequestParam(required = false) String end) {
+            @RequestParam(required = false) String end,
+            @RequestParam(required = false) Long customerId,
+            @RequestParam(required = false) Long productId) {
 
-        // 默认最近 30 天
-        DateTimeFormatter dayFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        if (end == null || end.isEmpty()) {
-            end = LocalDate.now().format(dayFmt);
+        // 如果 start 和 end 都为空，则不设置默认值（查询全部）
+        String startDateTime = null;
+        String endDateTime = null;
+        if (start != null && !start.isEmpty()) {
+            startDateTime = start + " 00:00:00";
         }
-        if (start == null || start.isEmpty()) {
-            start = LocalDate.now().minusDays(29).format(dayFmt);
+        if (end != null && !end.isEmpty()) {
+            endDateTime = end + " 23:59:59";
         }
-
-        String startDateTime = start + " 00:00:00";
-        String endDateTime = end + " 23:59:59";
 
         // 趋势格式
         String fmt;
@@ -73,13 +75,13 @@ public class StatisticsController {
         }
 
         List<StatisticsVO.TrendItem> trend =
-                ordersMapper.selectTrend(fmt, startDateTime, endDateTime);
+                ordersMapper.selectTrend(fmt, startDateTime, endDateTime, customerId, productId);
 
         List<StatisticsVO.ProductRankItem> productRank =
-                orderItemMapper.selectProductRank(startDateTime, endDateTime, 10);
+                orderItemMapper.selectProductRank(startDateTime, endDateTime, customerId, productId, 10);
 
         List<StatisticsVO.CustomerRankItem> customerRank =
-                orderItemMapper.selectCustomerRank(startDateTime, endDateTime, 10);
+                orderItemMapper.selectCustomerRank(startDateTime, endDateTime, customerId, productId, 10);
 
         StatisticsVO vo = new StatisticsVO();
         vo.setTrend(trend);
@@ -97,6 +99,8 @@ public class StatisticsController {
             @RequestParam(defaultValue = "day") String type,
             @RequestParam(required = false) String start,
             @RequestParam(required = false) String end,
+            @RequestParam(required = false) Long customerId,
+            @RequestParam(required = false) Long productId,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         // 验证管理员权限
@@ -104,17 +108,15 @@ public class StatisticsController {
             return Result.error("无权限访问");
         }
 
-        // 默认最近 30 天
-        DateTimeFormatter dayFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        if (end == null || end.isEmpty()) {
-            end = LocalDate.now().format(dayFmt);
+        // 如果 start 和 end 都为空，则不设置默认值（查询全部）
+        String startDateTime = null;
+        String endDateTime = null;
+        if (start != null && !start.isEmpty()) {
+            startDateTime = start + " 00:00:00";
         }
-        if (start == null || start.isEmpty()) {
-            start = LocalDate.now().minusDays(29).format(dayFmt);
+        if (end != null && !end.isEmpty()) {
+            endDateTime = end + " 23:59:59";
         }
-
-        String startDateTime = start + " 00:00:00";
-        String endDateTime = end + " 23:59:59";
 
         // 趋势格式
         String fmt;
@@ -129,7 +131,7 @@ public class StatisticsController {
         ProfitStatisticsVO vo = new ProfitStatisticsVO();
 
         // 1. 利润趋势
-        List<Map<String, Object>> trendData = orderItemMapper.selectProfitTrend(fmt, startDateTime, endDateTime);
+        List<Map<String, Object>> trendData = orderItemMapper.selectProfitTrend(fmt, startDateTime, endDateTime, customerId, productId);
         List<ProfitStatisticsVO.TrendData> profitTrend = new ArrayList<>();
         for (Map<String, Object> map : trendData) {
             String date = (String) map.get("date");
@@ -139,7 +141,7 @@ public class StatisticsController {
         vo.setProfitTrend(profitTrend);
 
         // 2. 商品利润排行
-        List<Map<String, Object>> productData = orderItemMapper.selectProductProfitRank();
+        List<Map<String, Object>> productData = orderItemMapper.selectProductProfitRank(startDateTime, endDateTime, customerId, productId);
         List<ProfitStatisticsVO.ProductProfitRank> productRank = new ArrayList<>();
         for (Map<String, Object> map : productData) {
             String productName = (String) map.get("productName");
@@ -154,7 +156,7 @@ public class StatisticsController {
         vo.setProductRank(productRank);
 
         // 3. 客户利润贡献排行
-        List<Map<String, Object>> customerData = orderItemMapper.selectCustomerProfitRank();
+        List<Map<String, Object>> customerData = orderItemMapper.selectCustomerProfitRank(startDateTime, endDateTime, customerId, productId);
         List<ProfitStatisticsVO.CustomerProfitRank> customerRank = new ArrayList<>();
         for (Map<String, Object> map : customerData) {
             String customerName = (String) map.get("customerName");
@@ -168,7 +170,7 @@ public class StatisticsController {
         vo.setCustomerRank(customerRank);
 
         // 4. 利润汇总
-        Map<String, Object> summary = orderItemMapper.selectProfitSummary();
+        Map<String, Object> summary = orderItemMapper.selectProfitSummary(startDateTime, endDateTime, customerId, productId);
         BigDecimal totalProfit = (BigDecimal) summary.get("totalProfit");
         Number profitableProductCountNum = (Number) summary.get("profitableProductCount");
         Long profitableProductCount = profitableProductCountNum != null ? profitableProductCountNum.longValue() : 0L;

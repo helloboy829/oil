@@ -9,10 +9,21 @@
             COALESCE(SUM(oi.profit), 0) as profit
         FROM order_item oi
         LEFT JOIN orders o ON oi.order_id = o.id
-        WHERE o.create_time BETWEEN #{startDate} AND #{endDate}
-          AND oi.deleted = 0
+        WHERE oi.deleted = 0
           AND o.deleted = 0
           AND oi.profit IS NOT NULL
+          <if test="startDate != null">
+              AND o.create_time &gt;= #{startDate}
+          </if>
+          <if test="endDate != null">
+              AND o.create_time &lt;= #{endDate}
+          </if>
+          <if test="customerId != null">
+              AND o.customer_id = #{customerId}
+          </if>
+          <if test="productId != null">
+              AND oi.product_id = #{productId}
+          </if>
         GROUP BY date
         ORDER BY date
     </select>
@@ -29,8 +40,22 @@
                 ELSE 0
             END as avgProfitRate
         FROM order_item oi
+        LEFT JOIN orders o ON oi.order_id = o.id
         WHERE oi.deleted = 0
+          AND o.deleted = 0
           AND oi.profit IS NOT NULL
+          <if test="startDate != null">
+              AND o.create_time &gt;= #{startDate}
+          </if>
+          <if test="endDate != null">
+              AND o.create_time &lt;= #{endDate}
+          </if>
+          <if test="customerId != null">
+              AND o.customer_id = #{customerId}
+          </if>
+          <if test="productId != null">
+              AND oi.product_id = #{productId}
+          </if>
         GROUP BY oi.product_id, oi.product_name
         ORDER BY totalProfit DESC
         LIMIT 10
@@ -47,6 +72,18 @@
         WHERE o.deleted = 0
           AND oi.deleted = 0
           AND oi.profit IS NOT NULL
+          <if test="startDate != null">
+              AND o.create_time &gt;= #{startDate}
+          </if>
+          <if test="endDate != null">
+              AND o.create_time &lt;= #{endDate}
+          </if>
+          <if test="customerId != null">
+              AND o.customer_id = #{customerId}
+          </if>
+          <if test="productId != null">
+              AND oi.product_id = #{productId}
+          </if>
         GROUP BY o.customer_id, o.customer_name
         ORDER BY totalProfit DESC
         LIMIT 10
@@ -55,11 +92,25 @@
     <!-- 查询利润汇总数据 -->
     <select id="selectProfitSummary" resultType="java.util.Map">
         SELECT
-            COALESCE(SUM(profit), 0) as totalProfit,
-            COUNT(DISTINCT product_id) as profitableProductCount
-        FROM order_item
-        WHERE deleted = 0
-          AND profit IS NOT NULL
+            COALESCE(SUM(oi.profit), 0) as totalProfit,
+            COUNT(DISTINCT oi.product_id) as profitableProductCount
+        FROM order_item oi
+        LEFT JOIN orders o ON oi.order_id = o.id
+        WHERE oi.deleted = 0
+          AND o.deleted = 0
+          AND oi.profit IS NOT NULL
+          <if test="startDate != null">
+              AND o.create_time &gt;= #{startDate}
+          </if>
+          <if test="endDate != null">
+              AND o.create_time &lt;= #{endDate}
+          </if>
+          <if test="customerId != null">
+              AND o.customer_id = #{customerId}
+          </if>
+          <if test="productId != null">
+              AND oi.product_id = #{productId}
+          </if>
     </select>
 
 </mapper>

@@ -18,6 +18,44 @@
         style="margin-left: 16px;"
         @change="loadData"
       />
+      <el-button type="default" @click="clearDateRange" style="margin-left: 8px;">
+        清除日期
+      </el-button>
+      <el-select
+        v-model="searchForm.customerId"
+        filterable
+        clearable
+        placeholder="全部客户"
+        style="margin-left: 16px; width: 180px;"
+        @focus="loadAllCustomers"
+        @change="loadData"
+      >
+        <el-option
+          v-for="customer in customerList"
+          :key="customer.id"
+          :label="customer.name"
+          :value="customer.id"
+        />
+      </el-select>
+      <el-select
+        v-model="searchForm.productId"
+        filterable
+        clearable
+        placeholder="全部商品"
+        style="margin-left: 8px; width: 200px;"
+        @focus="loadAllProducts"
+        @change="loadData"
+      >
+        <el-option
+          v-for="product in productList"
+          :key="product.id"
+          :label="`${product.name} (${product.code})`"
+          :value="product.id"
+        />
+      </el-select>
+      <el-button type="primary" @click="resetFilters" style="margin-left: 8px;">
+        重置
+      </el-button>
     </div>
 
     <!-- 汇总卡片 -->
@@ -158,9 +196,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, reactive } from 'vue'
 import * as echarts from 'echarts'
-import { statisticsApi } from '@/api/index.js'
+import { statisticsApi, customerApi, productApi } from '@/api/index.js'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
@@ -175,6 +213,18 @@ const thirtyDaysAgo = new Date(today)
 thirtyDaysAgo.setDate(today.getDate() - 29)
 const fmt = (d) => d.toISOString().slice(0, 10)
 const dateRange = ref([fmt(thirtyDaysAgo), fmt(today)])
+
+// 筛选条件
+const searchForm = reactive({
+  customerId: null,
+  productId: null
+})
+
+// 客户和商品列表
+const customerList = ref([])
+const productList = ref([])
+const customerLoading = ref(false)
+const productLoading = ref(false)
 
 const trendData = ref([])
 const productRank = ref([])
@@ -236,14 +286,29 @@ const dateShortcuts = [
 
 // ---------- 加载数据 ----------
 async function loadData() {
-  if (!dateRange.value) return
   loading.value = true
   try {
-    const res = await statisticsApi.get({
-      type: queryType.value,
-      start: dateRange.value[0],
-      end: dateRange.value[1],
-    })
+    const params = {
+      type: queryType.value
+    }
+
+    // 如果有日期范围，添加 start 和 end
+    if (dateRange.value) {
+      params.start = dateRange.value[0]
+      params.end = dateRange.value[1]
+    }
+
+    // 如果有客户筛选，添加 customerId
+    if (searchForm.customerId) {
+      params.customerId = searchForm.customerId
+    }
+
+    // 如果有商品筛选，添加 productId
+    if (searchForm.productId) {
+      params.productId = searchForm.productId
+    }
+
+    const res = await statisticsApi.get(params)
     trendData.value = res.data.trend || []
     productRank.value = res.data.productRank || []
     customerRank.value = res.data.customerRank || []
@@ -267,13 +332,29 @@ function onTypeChange() {
 
 // ---------- 加载利润统计（仅管理员） ----------
 async function loadProfitStatistics() {
-  if (!dateRange.value || !authStore.isAdmin) return
+  if (!authStore.isAdmin) return
   try {
-    const res = await statisticsApi.getProfit({
-      type: queryType.value,
-      start: dateRange.value[0],
-      end: dateRange.value[1],
-    })
+    const params = {
+      type: queryType.value
+    }
+
+    // 如果有日期范围，添加 start 和 end
+    if (dateRange.value) {
+      params.start = dateRange.value[0]
+      params.end = dateRange.value[1]
+    }
+
+    // 如果有客户筛选，添加 customerId
+    if (searchForm.customerId) {
+      params.customerId = searchForm.customerId
+    }
+
+    // 如果有商品筛选，添加 productId
+    if (searchForm.productId) {
+      params.productId = searchForm.productId
+    }
+
+    const res = await statisticsApi.getProfit(params)
     const data = res.data || {}
     profitData.value = {
       trend: data.profitTrend || [],
@@ -291,6 +372,64 @@ async function loadProfitStatistics() {
   } catch (error) {
     console.error('加载利润数据失败:', error)
   }
+}
+
+// ---------- 加载客户列表 ----------
+async function loadAllCustomers() {
+  if (customerList.value.length > 0) return
+
+  try {
+    customerLoading.value = true
+    const res = await customerApi.getPage({
+      current: 1,
+      size: 1000
+    })
+    customerList.value = res.data.records
+  } catch (err) {
+    console.error('加载客户列表失败', err)
+  } finally {
+    customerLoading.value = false
+  }
+}
+
+// ---------- 加载商品列表 ----------
+async function loadAllProducts() {
+  if (productList.value.length > 0) return
+
+  try {
+    productLoading.value = true
+    const res = await productApi.getPage({
+      current: 1,
+      size: 1000
+    })
+    productList.value = res.data.records
+  } catch (err) {
+    console.error('加载商品列表失败', err)
+  } finally {
+    productLoading.value = false
+  }
+}
+
+// ---------- 清除日期范围 ----------
+function clearDateRange() {
+  dateRange.value = null
+  loadData()
+}
+
+// ---------- 重置所有筛选条件 ----------
+function resetFilters() {
+  // 重置为最近30天
+  const end = new Date()
+  const start = new Date()
+  start.setDate(end.getDate() - 29)
+  dateRange.value = [fmt(start), fmt(end)]
+
+  // 清空客户和商品筛选
+  searchForm.customerId = null
+  searchForm.productId = null
+
+  // 重新加载数据
+  loadData()
 }
 
 // ---------- 加载库存统计 ----------

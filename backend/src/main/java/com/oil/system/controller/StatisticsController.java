@@ -225,9 +225,9 @@ public class StatisticsController {
                     .parseSignedClaims(token)
                     .getPayload();
 
-            // 检查 role 是否为 admin
+            // 检查 role 是否为 admin（忽略大小写）
             String role = claims.get("role", String.class);
-            return "admin".equals(role);
+            return "admin".equalsIgnoreCase(role);
         } catch (Exception e) {
             return false;
         }

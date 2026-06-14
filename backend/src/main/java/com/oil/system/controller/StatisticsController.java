@@ -219,11 +219,15 @@ public class StatisticsController {
         try {
             String token = authHeader.substring(7);
             SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-            Jwts.parser()
+            var claims = Jwts.parser()
                     .verifyWith(key)
                     .build()
-                    .parseSignedClaims(token);
-            return true;
+                    .parseSignedClaims(token)
+                    .getPayload();
+
+            // 检查 role 是否为 admin
+            String role = claims.get("role", String.class);
+            return "admin".equals(role);
         } catch (Exception e) {
             return false;
         }

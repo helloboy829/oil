@@ -276,6 +276,24 @@ let profitChart = null
 let categoryStockChart = null
 let stockRankChart = null
 
+// 检测是否为移动设备
+const isMobileDevice = () => window.innerWidth <= 768
+
+// 获取响应式图表配置
+const getResponsiveChartConfig = () => {
+  const isMobile = isMobileDevice()
+  return {
+    fontSize: isMobile ? 10 : 12,
+    gridLeft: isMobile ? 80 : 120,
+    gridRight: isMobile ? 10 : 20,
+    gridTop: isMobile ? 5 : 10,
+    gridBottom: isMobile ? 25 : 30,
+    symbolSize: isMobile ? 4 : 6,
+    lineWidth: isMobile ? 1.5 : 2,
+    labelFontSize: isMobile ? 10 : 12
+  }
+}
+
 // ---------- 日期快捷选项 ----------
 const dateShortcuts = [
   { text: '最近7天',  value: () => { const e = new Date(); const s = new Date(); s.setDate(e.getDate()-6); return [fmt(s), fmt(e)] } },
@@ -468,22 +486,23 @@ function renderCharts() {
 function renderTrend() {
   if (!trendChartEl.value) return
   if (!trendChart) trendChart = echarts.init(trendChartEl.value)
+  const config = getResponsiveChartConfig()
   trendChart.setOption({
     tooltip: { trigger: 'axis', valueFormatter: v => '¥' + Number(v).toFixed(2) },
-    grid: { left: 60, right: 20, top: 20, bottom: 40 },
+    grid: { left: 60, right: config.gridRight, top: config.gridTop + 15, bottom: config.gridBottom + 10 },
     xAxis: {
       type: 'category',
       data: trendData.value.map(i => i.date),
-      axisLabel: { rotate: trendData.value.length > 20 ? 30 : 0, fontSize: 12 }
+      axisLabel: { rotate: trendData.value.length > 20 ? 30 : 0, fontSize: config.fontSize }
     },
-    yAxis: { type: 'value', axisLabel: { formatter: v => '¥' + v } },
+    yAxis: { type: 'value', axisLabel: { formatter: v => '¥' + v, fontSize: config.fontSize } },
     series: [{
       type: 'line',
       data: trendData.value.map(i => Number(i.amount).toFixed(2)),
       smooth: true,
       symbol: 'circle',
-      symbolSize: 6,
-      lineStyle: { color: '#4f46e5', width: 2 },
+      symbolSize: config.symbolSize,
+      lineStyle: { color: '#4f46e5', width: config.lineWidth },
       itemStyle: { color: '#4f46e5' },
       areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(79,70,229,0.25)' }, { offset: 1, color: 'rgba(79,70,229,0)' }] } }
     }]
@@ -494,16 +513,17 @@ function renderProductRank() {
   if (!productChartEl.value) return
   if (!productChart) productChart = echarts.init(productChartEl.value)
   const items = [...productRank.value].reverse()
+  const config = getResponsiveChartConfig()
   productChart.setOption({
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    grid: { left: 120, right: 20, top: 10, bottom: 30 },
+    grid: { left: config.gridLeft, right: config.gridRight, top: config.gridTop, bottom: config.gridBottom },
     xAxis: { type: 'value' },
-    yAxis: { type: 'category', data: items.map(i => i.productName), axisLabel: { fontSize: 12 } },
+    yAxis: { type: 'category', data: items.map(i => i.productName), axisLabel: { fontSize: config.fontSize } },
     series: [{
       type: 'bar',
       data: items.map(i => i.totalQuantity),
       itemStyle: { color: '#10b981', borderRadius: [0, 4, 4, 0] },
-      label: { show: true, position: 'right', formatter: '{c} 件' }
+      label: { show: true, position: 'right', formatter: '{c} 件', fontSize: config.labelFontSize }
     }]
   })
 }
@@ -512,16 +532,17 @@ function renderCustomerRank() {
   if (!customerChartEl.value) return
   if (!customerChart) customerChart = echarts.init(customerChartEl.value)
   const items = [...customerRank.value].reverse()
+  const config = getResponsiveChartConfig()
   customerChart.setOption({
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, valueFormatter: v => '¥' + Number(v).toFixed(2) },
-    grid: { left: 100, right: 20, top: 10, bottom: 30 },
-    xAxis: { type: 'value', axisLabel: { formatter: v => '¥' + v } },
-    yAxis: { type: 'category', data: items.map(i => i.customerName), axisLabel: { fontSize: 12 } },
+    grid: { left: config.gridLeft - 20, right: config.gridRight, top: config.gridTop, bottom: config.gridBottom },
+    xAxis: { type: 'value', axisLabel: { formatter: v => '¥' + v, fontSize: config.fontSize } },
+    yAxis: { type: 'category', data: items.map(i => i.customerName), axisLabel: { fontSize: config.fontSize } },
     series: [{
       type: 'bar',
       data: items.map(i => Number(i.totalAmount).toFixed(2)),
       itemStyle: { color: '#f59e0b', borderRadius: [0, 4, 4, 0] },
-      label: { show: true, position: 'right', formatter: p => '¥' + Number(p.value).toFixed(0) }
+      label: { show: true, position: 'right', formatter: p => '¥' + Number(p.value).toFixed(0), fontSize: config.labelFontSize }
     }]
   })
 }
@@ -529,22 +550,23 @@ function renderCustomerRank() {
 function renderProfitChart() {
   if (!profitChartEl.value) return
   if (!profitChart) profitChart = echarts.init(profitChartEl.value)
+  const config = getResponsiveChartConfig()
   profitChart.setOption({
     tooltip: { trigger: 'axis', valueFormatter: v => '¥' + Number(v).toFixed(2) },
-    grid: { left: 60, right: 20, top: 20, bottom: 40 },
+    grid: { left: 60, right: config.gridRight, top: config.gridTop + 15, bottom: config.gridBottom + 10 },
     xAxis: {
       type: 'category',
       data: profitData.value.trend.map(i => i.date),
-      axisLabel: { rotate: profitData.value.trend.length > 20 ? 30 : 0, fontSize: 12 }
+      axisLabel: { rotate: profitData.value.trend.length > 20 ? 30 : 0, fontSize: config.fontSize }
     },
-    yAxis: { type: 'value', axisLabel: { formatter: v => '¥' + v } },
+    yAxis: { type: 'value', axisLabel: { formatter: v => '¥' + v, fontSize: config.fontSize } },
     series: [{
       type: 'line',
       data: profitData.value.trend.map(i => Number(i.profit).toFixed(2)),
       smooth: true,
       symbol: 'circle',
-      symbolSize: 6,
-      lineStyle: { color: '#10b981', width: 2 },
+      symbolSize: config.symbolSize,
+      lineStyle: { color: '#10b981', width: config.lineWidth },
       itemStyle: { color: '#10b981' },
       areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(16,185,129,0.25)' }, { offset: 1, color: 'rgba(16,185,129,0)' }] } }
     }]

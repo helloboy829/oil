@@ -122,6 +122,46 @@ body {
    移动端适配 (PWA 优化)
    ======================================== */
 
+/* 触摸反馈优化 */
+@media (hover: none) and (pointer: coarse) {
+  /* 移除按钮悬停效果，使用点击反馈 */
+  .el-button:active {
+    transform: scale(0.97);
+    opacity: 0.9;
+  }
+
+  /* 增大可点击区域 */
+  .el-button {
+    min-height: 40px;
+    padding: 10px 16px;
+  }
+
+  .el-button--small {
+    min-height: 36px;
+    padding: 8px 12px;
+  }
+
+  /* 表格操作按钮增大 */
+  .el-table .el-button--text {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+
+  /* 输入框增大 */
+  .el-input__inner,
+  .el-select__wrapper {
+    min-height: 40px;
+  }
+
+  /* 禁用长按选择文本（避免误触） */
+  .el-button,
+  .el-table__row {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+}
+
 /* 平板和手机 */
 @media (max-width: 768px) {
   :root {
@@ -144,6 +184,13 @@ body {
 
   .el-table__body-wrapper {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 表格操作按钮更大更易点击 */
+  .el-table .el-button {
+    min-width: 60px;
+    padding: 6px 12px;
   }
 
   /* 按钮组堆叠 */

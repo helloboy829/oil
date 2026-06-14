@@ -782,11 +782,35 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
+  .search-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-card .el-radio-group {
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+  }
+
+  .search-card .el-date-picker,
+  .search-card .el-select,
+  .search-card .el-button {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-top: 12px;
+  }
+
   .summary-row {
     grid-template-columns: repeat(2, 1fr);
   }
+
   .rank-row {
     flex-direction: column;
+  }
+
+  .chart-box {
+    height: 300px !important;
   }
 }
 </style>

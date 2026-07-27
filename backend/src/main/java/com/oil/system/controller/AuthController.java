@@ -2,6 +2,7 @@ package com.oil.system.controller;
 
 import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.oil.system.annotation.OperationLog;
 import com.oil.system.dto.LoginDTO;
 import com.oil.system.dto.LoginVO;
 import com.oil.system.dto.Result;
@@ -34,6 +35,7 @@ public class AuthController {
      * 管理员登录
      */
     @PostMapping("/login")
+    @OperationLog(module = "用户管理", action = "登录")
     public Result<LoginVO> login(@RequestBody LoginDTO dto) {
         // 查询用户
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();

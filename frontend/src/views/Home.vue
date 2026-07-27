@@ -57,6 +57,10 @@
           <el-icon><TrendCharts /></el-icon>
           <span>数据统计</span>
         </el-menu-item>
+        <el-menu-item index="/operation-log" v-if="authStore.isAdmin">
+          <el-icon><Notebook /></el-icon>
+          <span>操作日志</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -149,7 +153,7 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { TrendCharts, FolderOpened } from '@element-plus/icons-vue'
+import { TrendCharts, FolderOpened, Notebook } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { authApi } from '@/api/auth'
 import { ElMessage } from 'element-plus'
@@ -248,7 +252,8 @@ const currentRouteName = computed(() => {
     '/customer': '客户管理',
     '/order': '订单管理',
     '/monthly-bill': '月结账单',
-    '/statistics': '数据统计'
+    '/statistics': '数据统计',
+    '/operation-log': '操作日志'
   }
   return nameMap[route.path] || '首页'
 })

@@ -2,6 +2,7 @@ package com.oil.system.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.oil.system.annotation.OperationLog;
 import com.oil.system.dto.Result;
 import com.oil.system.entity.Product;
 import com.oil.system.service.ProductService;
@@ -52,6 +53,7 @@ public class ProductController {
      * 新增商品
      */
     @PostMapping
+    @OperationLog(module = "商品管理", action = "新增")
     public Result<Void> save(@RequestBody Product product) {
         productService.save(product);
         // 生成二维码
@@ -63,6 +65,7 @@ public class ProductController {
      * 更新商品
      */
     @PutMapping
+    @OperationLog(module = "商品管理", action = "修改")
     public Result<Void> update(@RequestBody Product product) {
         productService.updateById(product);
         return Result.success();
@@ -72,6 +75,7 @@ public class ProductController {
      * 删除商品
      */
     @DeleteMapping("/{id}")
+    @OperationLog(module = "商品管理", action = "删除")
     public Result<Void> delete(@PathVariable Long id) {
         productService.removeById(id);
         return Result.success();
@@ -81,6 +85,7 @@ public class ProductController {
      * 批量删除商品
      */
     @DeleteMapping("/batch")
+    @OperationLog(module = "商品管理", action = "批量删除")
     public Result<Void> deleteBatch(@RequestBody java.util.List<Long> ids) {
         productService.removeByIds(ids);
         return Result.success();
@@ -90,6 +95,7 @@ public class ProductController {
      * 生成商品二维码
      */
     @PostMapping("/qrcode/{id}")
+    @OperationLog(module = "商品管理", action = "生成二维码")
     public Result<String> generateQrCode(@PathVariable Long id) {
         String qrCodePath = productService.generateQrCode(id);
         return Result.success(qrCodePath);

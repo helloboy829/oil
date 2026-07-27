@@ -94,3 +94,11 @@ export const categoryApi = {
     return request.delete(`/category/${id}`)
   }
 }
+
+// 操作日志相关接口（需要管理员权限）
+export const operationLogApi = {
+  // 分页查询操作日志
+  getPage(params) {
+    return request.get('/operation-log/page', { params })
+  }
+}

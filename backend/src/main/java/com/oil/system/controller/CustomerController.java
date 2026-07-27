@@ -2,6 +2,7 @@ package com.oil.system.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.oil.system.annotation.OperationLog;
 import com.oil.system.dto.Result;
 import com.oil.system.entity.Customer;
 import com.oil.system.entity.Orders;
@@ -60,6 +61,7 @@ public class CustomerController {
      * 新增客户
      */
     @PostMapping
+    @OperationLog(module = "客户管理", action = "新增")
     public Result<Customer> save(@RequestBody Customer customer) {
         if (customer == null || customer.getName() == null || customer.getName().trim().isEmpty()) {
             return Result.error("客户姓名不能为空");
@@ -89,6 +91,7 @@ public class CustomerController {
      * 更新客户
      */
     @PutMapping
+    @OperationLog(module = "客户管理", action = "修改")
     public Result<Void> update(@RequestBody Customer customer) {
         customerService.updateById(customer);
         return Result.success();
@@ -101,6 +104,7 @@ public class CustomerController {
      * 默认：有订单时返回 409 让前端决策
      */
     @DeleteMapping("/{id}")
+    @OperationLog(module = "客户管理", action = "删除")
     public Result<?> delete(@PathVariable Long id,
                             @RequestParam(defaultValue = "false") boolean force,
                             @RequestParam(defaultValue = "false") boolean keep) {
@@ -120,6 +124,7 @@ public class CustomerController {
      * 批量删除客户
      */
     @DeleteMapping("/batch")
+    @OperationLog(module = "客户管理", action = "批量删除")
     public Result<Void> deleteBatch(@RequestBody java.util.List<Long> ids,
                                      @RequestParam(defaultValue = "false") boolean force) {
         for (Long id : ids) {

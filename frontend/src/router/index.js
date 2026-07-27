@@ -41,6 +41,11 @@ const routes = [
         path: 'statistics',
         name: 'Statistics',
         component: () => import('@/views/Statistics.vue')
+      },
+      {
+        path: 'operation-log',
+        name: 'OperationLog',
+        component: () => import('@/views/OperationLog.vue')
       }
     ]
   }

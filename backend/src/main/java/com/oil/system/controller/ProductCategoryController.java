@@ -1,6 +1,7 @@
 package com.oil.system.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.oil.system.annotation.OperationLog;
 import com.oil.system.dto.CategoryWithCountDTO;
 import com.oil.system.dto.Result;
 import com.oil.system.entity.Product;
@@ -94,6 +95,7 @@ public class ProductCategoryController {
      * 新增分类
      */
     @PostMapping
+    @OperationLog(module = "分类管理", action = "新增")
     public Result<Void> save(@RequestBody ProductCategory category) {
         categoryService.save(category);
         return Result.success();
@@ -103,6 +105,7 @@ public class ProductCategoryController {
      * 更新分类
      */
     @PutMapping
+    @OperationLog(module = "分类管理", action = "修改")
     public Result<Void> update(@RequestBody ProductCategory category) {
         categoryService.updateById(category);
         return Result.success();
@@ -112,6 +115,7 @@ public class ProductCategoryController {
      * 删除分类
      */
     @DeleteMapping("/{id}")
+    @OperationLog(module = "分类管理", action = "删除")
     public Result<Void> delete(@PathVariable Long id) {
         categoryService.removeById(id);
         return Result.success();

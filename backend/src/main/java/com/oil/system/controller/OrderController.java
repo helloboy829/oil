@@ -2,6 +2,7 @@ package com.oil.system.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.oil.system.annotation.OperationLog;
 import com.oil.system.dto.OrderDTO;
 import com.oil.system.dto.Result;
 import com.oil.system.entity.Orders;
@@ -70,6 +71,7 @@ public class OrderController {
      * 创建订单
      */
     @PostMapping
+    @OperationLog(module = "订单管理", action = "新增")
     public Result<Orders> create(@RequestBody OrderDTO orderDTO) {
         Orders order = orderService.createOrder(orderDTO);
         return Result.success(order);
@@ -79,6 +81,7 @@ public class OrderController {
      * 更新订单
      */
     @PutMapping("/{id}")
+    @OperationLog(module = "订单管理", action = "修改")
     public Result<Orders> update(@PathVariable Long id, @RequestBody OrderDTO orderDTO) {
         Orders order = orderService.updateOrder(id, orderDTO);
         return Result.success(order);
@@ -96,6 +99,7 @@ public class OrderController {
      * 删除订单
      */
     @DeleteMapping("/{id}")
+    @OperationLog(module = "订单管理", action = "删除")
     public Result<Void> delete(@PathVariable Long id) {
         orderService.removeById(id);
         return Result.success();
@@ -105,6 +109,7 @@ public class OrderController {
      * 批量删除订单
      */
     @DeleteMapping("/batch")
+    @OperationLog(module = "订单管理", action = "批量删除")
     public Result<Void> deleteBatch(@RequestBody List<Long> ids) {
         orderService.removeByIds(ids);
         return Result.success();

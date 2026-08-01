@@ -8,7 +8,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/oil_system?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&serverTimezone=Asia/Shanghai
     username: root
-    password: 123456
+    password: ${SPRING_DATASOURCE_PASSWORD:123456}
   servlet:
     multipart:
       max-file-size: 10MB
@@ -29,7 +29,7 @@ mybatis-plus:
 
 # JWT配置
 jwt:
-  secret: oil-system-secret-key-2024-very-long-secret
+  secret: ${JWT_SECRET:oil-system-dev-secret-change-in-production}
   expiration: 86400000
 
 # 二维码配置

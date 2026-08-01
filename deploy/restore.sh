@@ -7,7 +7,7 @@
 CONTAINER_NAME="oil-mysql"
 DB_NAME="oil_system"
 DB_USER="root"
-DB_PASSWORD="123456"
+DB_PASSWORD="${MYSQL_ROOT_PASSWORD:-123456}"
 
 # 检查参数
 if [ -z "$1" ]; then

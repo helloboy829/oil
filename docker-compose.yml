@@ -7,7 +7,7 @@ services:
     container_name: oil-mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: oil_system
       TZ: Asia/Shanghai
     # 添加内存限制，防止OOM
@@ -63,7 +63,8 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/oil_system?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&serverTimezone=Asia/Shanghai
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: 123456
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
       TZ: Asia/Shanghai
       JAVA_OPTS: "-Xms128m -Xmx320m -XX:MetaspaceSize=64m -XX:MaxMetaspaceSize=128m"
     volumes:

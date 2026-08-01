@@ -39,8 +39,50 @@
 
 ## 服务器信息
 
-所有服务器连接信息、IP、密码、密钥等存放在 **`deploy/SERVER_INFO.md`**（仅本地，已 gitignore，不入库）。
-读取该文件获取 IP、SSH 用户、数据库密码、部署命令等。
+所有服务器连接信息（IP、SSH 用户、MySQL 密码、JWT 密钥、部署命令等）存放在 **`deploy/SERVER_INFO.md`**（仅本地，已 gitignore，不入 GitHub）。
+
+部署前必须先读取该文件获取 IP 等信息。
+
+### 如果 `deploy/SERVER_INFO.md` 不存在或丢失
+
+**必须询问用户以下信息，并在用户提供后自动创建该文件：**
+
+1. 服务器 IP（格式如 `120.79.211.158`）
+2. SSH 登录用户（通常是 `root`）
+3. MySQL root 密码
+4. JWT 签名密钥（随机字符串，至少 32 字符）
+5. 服务器上项目路径（通常是 `/oil`）
+6. 是否有域名（可选）
+
+询问示例："我注意到 `deploy/SERVER_INFO.md` 丢失了。为了能连接服务器和部署，请提供以下信息：
+- 服务器 IP：
+- SSH 用户（默认 root）：
+- MySQL root 密码：
+- 如果有 JWT 密钥请提供（没有的话我会生成一个随机密钥）："
+
+收集到信息后，按以下模板创建 `deploy/SERVER_INFO.md`：
+```markdown
+# 服务器部署信息（仅本地保留，不入 Git）
+
+## 连接信息
+- **IP**: {用户提供的IP}
+- **用户**: {用户提供的SSH用户}
+- **SSH**: `ssh {用户}@{IP}`
+
+## 项目信息
+- **项目路径**: {用户提供的路径}
+- **启动方式**: `docker-compose up -d --build`
+- **停止方式**: `docker-compose down`
+
+## 环境变量（服务器 .env）
+MYSQL_ROOT_PASSWORD={用户提供的MySQL密码}
+JWT_SECRET={用户提供的JWT密钥}
+
+## 数据库
+- **数据库名**: oil_system
+- **用户**: root
+- **密码**: {用户提供的MySQL密码}
+```
 
 ## 技术栈
 

@@ -32,3 +32,6 @@ frontend/.vite/
 
 # Data directories (持久化数据，不提交到git)
 data/
+
+# 部署信息（含服务器 IP，仅本地保留）
+deploy/SERVER_INFO.md

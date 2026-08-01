@@ -33,16 +33,14 @@
 1. 检查 git status，确认要提交的文件
 2. 生成 commit message
 3. push 到 GitHub
-4. ssh 到服务器执行 `cd /oil && git pull && docker-compose up -d --build`
-5. 更新 `docs/修改记录.md`
+4. ssh 到服务器，执行 `cd /oil && git pull origin main && docker-compose down && docker-compose up -d --build`
+5. 如有新 SQL 迁移文件，在服务器执行迁移
+6. 更新 `docs/修改记录.md`
 
 ## 服务器信息
 
-- **IP**: <服务器IP>(不入库避免泄露,部署时填入实际 IP)
-- **用户**: root
-- **项目路径**: /oil
-- **启动方式**: `docker-compose up -d --build`
-- **日志查看**: `docker-compose logs -f`
+所有服务器连接信息、IP、密码、密钥等存放在 **`deploy/SERVER_INFO.md`**（仅本地，已 gitignore，不入库）。
+读取该文件获取 IP、SSH 用户、数据库密码、部署命令等。
 
 ## 技术栈
 

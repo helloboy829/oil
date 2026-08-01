@@ -139,7 +139,11 @@
     </el-card>
 
     <!-- 详情对话框 -->
-    <el-dialog v-model="detailVisible" title="操作详情" width="600px" class="modern-dialog">
+    <el-dialog v-model="detailVisible" title="操作详情" width="650px" class="modern-dialog">
+      <!-- 变更描述（自然语言） -->
+      <div v-if="detailRow.changeDescription" class="change-desc-card">
+        <span class="desc-text">{{ detailRow.changeDescription }}</span>
+      </div>
       <el-descriptions :column="1" border size="large">
         <el-descriptions-item label="操作模块">{{ detailRow.module }}</el-descriptions-item>
         <el-descriptions-item label="操作类型">{{ detailRow.action }}</el-descriptions-item>
@@ -278,6 +282,23 @@ onMounted(() => {
 <style scoped>
 .operation-log-container {
   max-width: 1400px;
+}
+
+/* 变更描述卡片 */
+.change-desc-card {
+  background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+  border: 1px solid #93c5fd;
+  border-left: 4px solid var(--primary-color);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.desc-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e40af;
+  line-height: 1.8;
 }
 
 .search-card {

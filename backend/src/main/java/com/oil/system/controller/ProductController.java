@@ -85,7 +85,7 @@ public class ProductController {
      * 批量删除商品
      */
     @DeleteMapping("/batch")
-    @OperationLog(module = "商品管理", action = "批量删除")
+    @OperationLog(module = "商品管理", action = "批量删除", targetEntity = Product.class)
     public Result<Void> deleteBatch(@RequestBody java.util.List<Long> ids) {
         productService.removeByIds(ids);
         return Result.success();

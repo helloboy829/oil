@@ -124,7 +124,7 @@ public class CustomerController {
      * 批量删除客户
      */
     @DeleteMapping("/batch")
-    @OperationLog(module = "客户管理", action = "批量删除")
+    @OperationLog(module = "客户管理", action = "批量删除", targetEntity = Customer.class)
     public Result<Void> deleteBatch(@RequestBody java.util.List<Long> ids,
                                      @RequestParam(defaultValue = "false") boolean force) {
         for (Long id : ids) {

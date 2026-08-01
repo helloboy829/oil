@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oil.system.annotation.OperationLog;
 import com.oil.system.entity.*;
 import com.oil.system.mapper.*;
+import com.oil.system.util.ChangeDescGenerator;
 import com.oil.system.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -89,12 +90,17 @@ public class OperationLogAspect {
         }
 
         // 4. 查询操作前数据（仅当指定了 targetEntity 时）
-        Object entityId = null;
         if (operationLog.targetEntity() != Void.class) {
-            entityId = extractEntityId(joinPoint);
-            if (entityId != null) {
-                logEntry.setTargetId(String.valueOf(entityId));
-                logEntry.setBeforeData(queryBeforeData(operationLog.targetEntity(), entityId));
+            Object ids = extractIds(joinPoint);
+            if (ids instanceof Long) {
+                Long singleId = (Long) ids;
+                logEntry.setTargetId(String.valueOf(singleId));
+                logEntry.setBeforeData(queryBeforeData(operationLog.targetEntity(), singleId));
+            } else if (ids instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<Long> idList = (List<Long>) ids;
+                logEntry.setTargetId(idList.size() + "条");
+                logEntry.setBeforeData(queryBatchBeforeData(operationLog.targetEntity(), idList));
             }
         }
 
@@ -103,8 +109,13 @@ public class OperationLogAspect {
             Object result = joinPoint.proceed();
             // 成功
             logEntry.setStatus("成功");
-            // 操作后数据 = 请求参数
+            // 操作后数据
             logEntry.setAfterData(buildAfterData(joinPoint, operationLog));
+            // 生成自然语言变更描述
+            logEntry.setChangeDescription(
+                ChangeDescGenerator.generate(
+                    operationLog.module(), operationLog.action(),
+                    logEntry.getBeforeData(), logEntry.getAfterData()));
             saveLog(logEntry);
             return result;
         } catch (Throwable e) {
@@ -129,9 +140,9 @@ public class OperationLogAspect {
     }
 
     /**
-     * 从方法参数中提取实体 ID
+     * 从方法参数中提取实体 ID（单个 Long 或 List&lt;Long&gt; 批量）
      */
-    private Long extractEntityId(ProceedingJoinPoint joinPoint) {
+    private Object extractIds(ProceedingJoinPoint joinPoint) {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
         Parameter[] parameters = method.getParameters();
@@ -147,7 +158,13 @@ public class OperationLogAspect {
                 return (Long) arg;
             }
 
-            // 其次：@RequestBody 实体中有 getId() 方法（PUT 场景）
+            // 其次：@RequestBody List<Long> 批量删除场景
+            if (arg instanceof List && !((List<?>) arg).isEmpty()
+                    && ((List<?>) arg).get(0) instanceof Long) {
+                return arg;
+            }
+
+            // 再次：@RequestBody 实体中有 getId() 方法（PUT 场景）
             RequestBody reqBody = parameters[i].getAnnotation(RequestBody.class);
             if (reqBody != null) {
                 try {
@@ -161,6 +178,25 @@ public class OperationLogAspect {
             }
         }
         return null;
+    }
+
+    /**
+     * 批量查询实体操作前的数据快照
+     */
+    @SuppressWarnings("unchecked")
+    private String queryBatchBeforeData(Class<?> entityClass, List<Long> ids) {
+        try {
+            BaseMapper<?> mapper = mapperMap.get(entityClass);
+            if (mapper == null || ids.isEmpty()) return null;
+            List<?> entities = mapper.selectBatchIds(ids);
+            if (entities == null || entities.isEmpty()) return null;
+            String json = objectMapper.writeValueAsString(entities);
+            return truncate(json, MAX_DATA_LENGTH);
+        } catch (Exception e) {
+            log.warn("批量查询操作前数据失败: entity={}, ids={}, error={}",
+                    entityClass.getSimpleName(), ids.size(), e.getMessage());
+            return null;
+        }
     }
 
     /**

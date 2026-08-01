@@ -36,6 +36,8 @@ public class OperationLog {
 
     private String afterData;
 
+    private String changeDescription;
+
     private String status;
 
     private String errorMsg;

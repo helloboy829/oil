@@ -102,7 +102,7 @@ public class MonthlyBillController {
      * 批量删除月结账单
      */
     @DeleteMapping("/batch")
-    @OperationLog(module = "月结账单", action = "批量删除")
+    @OperationLog(module = "月结账单", action = "批量删除", targetEntity = MonthlyBill.class)
     public Result<Void> deleteBatch(@RequestBody java.util.List<Long> ids) {
         monthlyBillService.removeByIds(ids);
         return Result.success();

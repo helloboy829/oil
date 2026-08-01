@@ -109,7 +109,7 @@ public class OrderController {
      * 批量删除订单
      */
     @DeleteMapping("/batch")
-    @OperationLog(module = "订单管理", action = "批量删除")
+    @OperationLog(module = "订单管理", action = "批量删除", targetEntity = Orders.class)
     public Result<Void> deleteBatch(@RequestBody List<Long> ids) {
         orderService.removeByIds(ids);
         return Result.success();

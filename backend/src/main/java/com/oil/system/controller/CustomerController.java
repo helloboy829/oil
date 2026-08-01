@@ -91,7 +91,7 @@ public class CustomerController {
      * 更新客户
      */
     @PutMapping
-    @OperationLog(module = "客户管理", action = "修改")
+    @OperationLog(module = "客户管理", action = "修改", targetEntity = Customer.class)
     public Result<Void> update(@RequestBody Customer customer) {
         customerService.updateById(customer);
         return Result.success();
@@ -104,7 +104,7 @@ public class CustomerController {
      * 默认：有订单时返回 409 让前端决策
      */
     @DeleteMapping("/{id}")
-    @OperationLog(module = "客户管理", action = "删除")
+    @OperationLog(module = "客户管理", action = "删除", targetEntity = Customer.class)
     public Result<?> delete(@PathVariable Long id,
                             @RequestParam(defaultValue = "false") boolean force,
                             @RequestParam(defaultValue = "false") boolean keep) {

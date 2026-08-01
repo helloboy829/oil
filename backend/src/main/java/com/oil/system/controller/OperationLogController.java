@@ -5,9 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.oil.system.dto.Result;
 import com.oil.system.entity.OperationLog;
 import com.oil.system.mapper.OperationLogMapper;
-import com.oil.system.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,11 +16,8 @@ public class OperationLogController {
 
     private final OperationLogMapper operationLogMapper;
 
-    @Value("${jwt.secret:oil-system-secret-key-must-be-at-least-32-characters-long}")
-    private String jwtSecret;
-
     /**
-     * 分页查询操作日志（仅管理员）
+     * 分页查询操作日志（所有用户均可查看）
      */
     @GetMapping("/page")
     public Result<Page<OperationLog>> page(
@@ -32,13 +27,7 @@ public class OperationLogController {
             @RequestParam(required = false) String action,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
-            @RequestParam(required = false) String operatorName,
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
-
-        // 管理员权限校验
-        if (!JwtUtil.isAdmin(authHeader, jwtSecret)) {
-            return Result.error("无权限访问");
-        }
+            @RequestParam(required = false) String operatorName) {
 
         LambdaQueryWrapper<OperationLog> wrapper = new LambdaQueryWrapper<>();
 

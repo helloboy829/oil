@@ -57,7 +57,7 @@
           <el-icon><TrendCharts /></el-icon>
           <span>数据统计</span>
         </el-menu-item>
-        <el-menu-item index="/operation-log" v-if="authStore.isAdmin">
+        <el-menu-item index="/operation-log">
           <el-icon><Notebook /></el-icon>
           <span>操作日志</span>
         </el-menu-item>

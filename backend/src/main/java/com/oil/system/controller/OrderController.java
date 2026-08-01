@@ -81,7 +81,7 @@ public class OrderController {
      * 更新订单
      */
     @PutMapping("/{id}")
-    @OperationLog(module = "订单管理", action = "修改")
+    @OperationLog(module = "订单管理", action = "修改", targetEntity = Orders.class)
     public Result<Orders> update(@PathVariable Long id, @RequestBody OrderDTO orderDTO) {
         Orders order = orderService.updateOrder(id, orderDTO);
         return Result.success(order);
@@ -99,7 +99,7 @@ public class OrderController {
      * 删除订单
      */
     @DeleteMapping("/{id}")
-    @OperationLog(module = "订单管理", action = "删除")
+    @OperationLog(module = "订单管理", action = "删除", targetEntity = Orders.class)
     public Result<Void> delete(@PathVariable Long id) {
         orderService.removeById(id);
         return Result.success();

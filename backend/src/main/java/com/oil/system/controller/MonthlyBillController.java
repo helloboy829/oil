@@ -92,7 +92,7 @@ public class MonthlyBillController {
      * 删除月结账单
      */
     @DeleteMapping("/{id}")
-    @OperationLog(module = "月结账单", action = "删除")
+    @OperationLog(module = "月结账单", action = "删除", targetEntity = MonthlyBill.class)
     public Result<Void> delete(@PathVariable Long id) {
         monthlyBillService.removeById(id);
         return Result.success();

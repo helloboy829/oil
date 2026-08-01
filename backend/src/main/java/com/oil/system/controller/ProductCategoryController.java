@@ -105,7 +105,7 @@ public class ProductCategoryController {
      * 更新分类
      */
     @PutMapping
-    @OperationLog(module = "分类管理", action = "修改")
+    @OperationLog(module = "分类管理", action = "修改", targetEntity = ProductCategory.class)
     public Result<Void> update(@RequestBody ProductCategory category) {
         categoryService.updateById(category);
         return Result.success();
@@ -115,7 +115,7 @@ public class ProductCategoryController {
      * 删除分类
      */
     @DeleteMapping("/{id}")
-    @OperationLog(module = "分类管理", action = "删除")
+    @OperationLog(module = "分类管理", action = "删除", targetEntity = ProductCategory.class)
     public Result<Void> delete(@PathVariable Long id) {
         categoryService.removeById(id);
         return Result.success();

@@ -153,7 +153,13 @@
           </el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="操作时间">{{ formatDateTime(detailRow.createTime) }}</el-descriptions-item>
-        <el-descriptions-item v-if="detailRow.requestParams" label="请求参数">
+        <el-descriptions-item v-if="detailRow.beforeData" label="操作前数据">
+          <div class="params-content before-data">{{ formatJson(detailRow.beforeData) }}</div>
+        </el-descriptions-item>
+        <el-descriptions-item v-if="detailRow.afterData" label="操作后数据">
+          <div class="params-content after-data">{{ formatJson(detailRow.afterData) }}</div>
+        </el-descriptions-item>
+        <el-descriptions-item v-if="detailRow.requestParams && !detailRow.beforeData && !detailRow.afterData" label="请求参数">
           <div class="params-content">{{ formatJson(detailRow.requestParams) }}</div>
         </el-descriptions-item>
         <el-descriptions-item v-if="detailRow.errorMsg" label="错误信息">
@@ -322,6 +328,16 @@ onMounted(() => {
   overflow-y: auto;
   line-height: 1.6;
   color: var(--text-main);
+}
+
+.params-content.before-data {
+  border-left: 4px solid var(--danger-color);
+  background: #fef2f2;
+}
+
+.params-content.after-data {
+  border-left: 4px solid var(--success-color);
+  background: #f0fdf4;
 }
 
 .pagination-container {

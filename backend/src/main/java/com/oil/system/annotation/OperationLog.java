@@ -16,4 +16,7 @@ public @interface OperationLog {
 
     /** 操作类型，如 "新增" */
     String action();
+
+    /** 目标实体类（用于查询操作前的旧数据），仅 UPDATE/DELETE 需设置 */
+    Class<?> targetEntity() default Void.class;
 }

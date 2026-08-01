@@ -32,6 +32,10 @@ public class OperationLog {
 
     private String requestParams;
 
+    private String beforeData;
+
+    private String afterData;
+
     private String status;
 
     private String errorMsg;

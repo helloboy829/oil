@@ -65,7 +65,7 @@ public class ProductController {
      * 更新商品
      */
     @PutMapping
-    @OperationLog(module = "商品管理", action = "修改")
+    @OperationLog(module = "商品管理", action = "修改", targetEntity = Product.class)
     public Result<Void> update(@RequestBody Product product) {
         productService.updateById(product);
         return Result.success();
@@ -75,7 +75,7 @@ public class ProductController {
      * 删除商品
      */
     @DeleteMapping("/{id}")
-    @OperationLog(module = "商品管理", action = "删除")
+    @OperationLog(module = "商品管理", action = "删除", targetEntity = Product.class)
     public Result<Void> delete(@PathVariable Long id) {
         productService.removeById(id);
         return Result.success();
